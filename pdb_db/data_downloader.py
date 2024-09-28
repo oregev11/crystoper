@@ -27,48 +27,13 @@ def load_pdb_ids_list(path):
     return data
 
 
-def download_pdb_object(pdb_id):
-    
-    url = PDB_REST_API_DOWNLOAD_URL + pdb_id + '.pdb'
-    response = requests.get(url)
-    
-    return response
 
-def download_entry_object(pdb_id):
-    
-    url = ENTRY_REST_API_DOWNLOAD_URL + pdb_id 
-    response = requests.get(url)
-    
-    return response
 
-def get_sequence_from_pdb_text(pdb_text):
-    "Get the FIRST sequence from a PDB file"
-    
-    pdb_io = StringIO(pdb_text)
-    sequence = ''
-
-    # Parse the PDB file and extract the sequence using SeqIO
-    for record in SeqIO.parse(pdb_io, "pdb-seqres"):
-        sequence = record.seq
-        return sequence
-
-def get_experimental_method_from_entry_object(response):
-    
-    data = response.json()
-    
-    # Extract the experimental method(s)
-    methods = [expt.get("method", "Unknown") for expt in data.get("exptl", [])]
-    
-    # Return the experimental method(s)
-    if methods:
-        return methods[0]  # Return the first method (there can be multiple)
-    else:
-        return "Unknown"
             
 
 def download_pdbs_data(ids_path,
                        output_path='test_output.csv',
-                       features=['sequence'],
+                       features=['method', 'grow', 'ph', 'temp', 'details', 'sequence'],
                        type='xray',
                        reset_download=True):
     
@@ -103,7 +68,13 @@ def download_pdbs_data(ids_path,
             data['method'] = method
         else:
             data['method'] = "could not reach record"
+            
+        ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
         
+        data['ph'] = ph
+        data['temp'] = temp
+        data['details'] = details
+                
         #get pdb as text
         pdb_response = download_pdb_object(pdb_id)
         
