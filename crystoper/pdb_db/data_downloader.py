@@ -26,7 +26,7 @@ def load_pdb_ids_list(path):
     
     return data
 
-def get_data_for_pdb_id(pdb_id):
+def get_features_dict_for_pdb_id(pdb_id, features):
     
         data = dict()
         
@@ -56,6 +56,8 @@ def get_data_for_pdb_id(pdb_id):
             
             if "sequence" in features:
                 data['sequence'] = get_sequence_from_pdb_text(pdb_text)
+
+            return data
         
         else:
             return
@@ -79,8 +81,9 @@ def download_pdbs_data(ids_path,
         
         else:
             #filter ids that were not already downloaded
+            existing_ids = pd.read_csv(output_path)['id'].to_list()
             ids = [id for id in ids \
-                    if id not in pd.read_csv(output_path)['id'].to_list()]
+                    if id not in existing_ids]
     else:
         # if file dosnt exists reset files with columns for all features
         with open(output_path, 'w') as f:
@@ -97,23 +100,23 @@ def download_pdbs_data(ids_path,
         
         for n in range(N_tries):
             
-            data = get_data_for_pdb_id(pdb_id)
+            data = get_features_dict_for_pdb_id(pdb_id, features)
             
             #if data was downloaded
             if data:
                 buffer += f'{pdb_id}'
-                buffer += f",{data['status']}"
+                buffer += f",{data.get('status')}"
                 
                 #write all acquired data to buffer according to features input order (which is the columns order in  the output csv)
                 for feature in features:
-                    buffer += f",{data[feature]}"
+                    buffer += f",{data.get(feature)}"
 
                 buffer += '\n'
                 break
             
             else:
                 print(f"Failed downloading data for {pdb_id}. try {n+1} out of {N_tries}")
-                sleep(1)
+                sleep(n+1)
         
         if not data:
             errors.append(pdb_id)
@@ -131,6 +134,7 @@ def download_pdbs_data(ids_path,
                 print(f"Could not download the following ids: {errors}")
                 
             buffer = ''
+            
                 
     
     #dump rest of buffer to file    
@@ -138,7 +142,8 @@ def download_pdbs_data(ids_path,
                 f.write(buffer)
     
 
-
+    print('PDB download is Done!')
+    print(f'The following pdb ids could not be downloaded: {errors}')
 
 def main():
     download_pdbs_data('/home/ofir/ofir_code/crystoper/pdb_db/20240927_pdb_entry_ids.json',
