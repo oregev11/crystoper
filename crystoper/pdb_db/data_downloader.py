@@ -14,6 +14,7 @@ from .pdb_methods import *
 OK_STATUS = 200
 BASE_COLUMNS = ['id', 'status']
 BATCH_SIZE = 50
+N_tries = 3
 
 def load_pdb_ids_list(path):
     "Load pdb ids json file as list. The file structure must be a list. for example: ['100D','1BQK','1DP5'...]"
@@ -25,6 +26,39 @@ def load_pdb_ids_list(path):
     
     return data
 
+def get_data_for_pdb_id(pdb_id):
+    
+        data = dict()
+        
+        #get entry
+        entry_response = download_entry_object(pdb_id)
+        
+        if entry_response.status_code == OK_STATUS:
+            method = get_experimental_method_from_entry_object(entry_response)
+            data['method'] = method
+        else:
+            data['method'] = "N/A"
+            
+        ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
+        
+        data['ph'] = ph
+        data['temp'] = temp
+        data['details'] = details
+                
+        #get pdb as text
+        pdb_response = download_pdb_object(pdb_id)
+        
+        data['status'] = pdb_response.status_code
+               
+        if pdb_response.status_code == OK_STATUS:
+                    
+            pdb_text = pdb_response.text
+            
+            if "sequence" in features:
+                data['sequence'] = get_sequence_from_pdb_text(pdb_text)
+        
+        else:
+            return
 
 def download_pdbs_data(ids_path,
                        output_path='test_output.csv',
@@ -55,53 +89,33 @@ def download_pdbs_data(ids_path,
     
     buffer = ''
     
+    print("Starting PDB data downloading....")
+    
     for i, pdb_id in tqdm(enumerate(ids), total=len(ids)):
         
-        buffer += f'{pdb_id}'
-        data = dict()
+        data = None
         
-        #get entry
-        entry_response = download_entry_object(pdb_id)
-        
-        if entry_response.status_code == OK_STATUS:
-            method = get_experimental_method_from_entry_object(entry_response)
-            data['method'] = method
-        else:
-            data['method'] = "could not reach record"
+        for n in range(N_tries):
             
-        ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
-        
-        data['ph'] = ph
-        data['temp'] = temp
-        data['details'] = details
+            data = get_data_for_pdb_id(pdb_id)
+            
+            #if data was downloaded
+            if data:
+                buffer += f'{pdb_id}'
+                buffer += f",{data['status']}"
                 
-        #get pdb as text
-        pdb_response = download_pdb_object(pdb_id)
-        
-        data['status'] = pdb_response.status_code
-        buffer += f",{data['status']}"
-        
-        if pdb_response.status_code == OK_STATUS:
+                #write all acquired data to buffer according to features input order (which is the columns order in  the output csv)
+                for feature in features:
+                    buffer += f",{data[feature]}"
+
+                buffer += '\n'
+                break
             
-            
-            pdb_text = pdb_response.text
-            
-            if "sequence" in features:
-                data['sequence'] = get_sequence_from_pdb_text(pdb_text)
-                        
+            else:
+                sleep(1)
         
-            #write all acquired data to buffer according to features input order (which is the columns order in  the output csv)
-            for feature in features:
-                buffer += f",{data[feature]}"
-                
-            
-        
-        else:
+        if not data:
             errors.append(pdb_id)
-            
-            
-        
-        buffer += '\n'    
         
         #dump buffer to file
         if i > 0 and i % BATCH_SIZE == 0:
