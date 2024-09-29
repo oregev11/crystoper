@@ -2,13 +2,15 @@ import json
 import requests
 from Bio import SeqIO
 from io import StringIO
-ENTRY_REST_API_DOWNLOAD_URL = "https://data.rcsb.org/rest/v1/core/entry/"
-N_TRIES = 3
 
-def download_entry_object(pdb_id):
-    
-    url = ENTRY_REST_API_DOWNLOAD_URL + pdb_id 
-    
+N_TRIES = 3
+OK_STATUS = 200
+
+
+
+
+def get_url(url):
+        
     for i in range(N_TRIES):
         try:
             return requests.get(url)
@@ -55,4 +57,31 @@ def get_crystal_grow_cond_from_entry_object(response):
     
     
     return ph, temp, details
+
+
+def get_all_sequences_from_polymer_entity(root_url):
+    """iterates all polymer entities and retrieve sequences until polymer id is missing (error response)
     
+    ARGS:
+        root_url (str): a string with the polimer entity root path. for example: 'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/'
+                        (given the above input, the function will download from 'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/1' ,
+                        'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/2 and so on until error page is found')
+                        
+    RETURN:
+        (str): a concat of all polymer chains for the pdb id in the root_url with ';' sep.
+    
+    
+    """
+    
+    sequences = []
+    i = 1
+        
+    while True:
+        url = root_url + str(i) 
+        response = get_url(url)
+    
+        #break on error status (when the polimer id is missing an error response is return)
+        if response.status != OK_STATUS:
+            return ';'.join(sequences)
+        
+        i += 1

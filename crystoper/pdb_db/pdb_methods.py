@@ -3,6 +3,11 @@ import json
 import requests
 from Bio import SeqIO
 from io import StringIO
+OK_STATUS = 200
+
+# TODO: USE THE POLYMER ENTITY TO GET SEQUENCE INSTEAD OF PDB
+#LIKE: https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/1 
+
 
 PDB_REST_API_DOWNLOAD_URL = "https://files.rcsb.org/download/"
 N_TRIES = 3
