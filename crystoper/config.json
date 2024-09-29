@@ -1,3 +1,4 @@
 {
-    "pdb_ids_path": "pdb_db/20240927_pdb_entry_ids.json"
+    "pdb_ids_path": "crystoper/data/pdb_data/20240927_pdb_entry_ids.json",
+    "downloaded_data_path": "crystoper/data/pdb_data/data.csv"
 }
