@@ -112,6 +112,7 @@ def download_pdbs_data(ids_path,
                 break
             
             else:
+                print(f"Failed downloading data for {pdb_id}. try {n+1} out of {N_tries}")
                 sleep(1)
         
         if not data:
