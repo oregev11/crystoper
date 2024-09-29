@@ -1,9 +1,22 @@
+
+import json 
+import requests
+from Bio import SeqIO
+from io import StringIO
+
+PDB_REST_API_DOWNLOAD_URL = "https://files.rcsb.org/download/"
+N_TRIES = 3
 def download_pdb_object(pdb_id):
     
     url = PDB_REST_API_DOWNLOAD_URL + pdb_id + '.pdb'
-    response = requests.get(url)
     
-    return response
+    for i in range(N_TRIES):
+        try:
+            return requests.get(url)
+        except:
+            print(f"Could form connection with PDB while fetching {url}")
+            print(f'try {i+1} out of {N_TRIES}')
+            sleep(3)
 
 
 def get_sequence_from_pdb_text(pdb_text):

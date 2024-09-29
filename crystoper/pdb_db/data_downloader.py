@@ -8,13 +8,12 @@ from io import StringIO
 import pandas as pd
 from tqdm import tqdm
 
-
-PDB_REST_API_DOWNLOAD_URL = "https://files.rcsb.org/download/"
-ENTRY_REST_API_DOWNLOAD_URL = "https://data.rcsb.org/rest/v1/core/entry/"
+from .entry_methods import *
+from .pdb_methods import *
 
 OK_STATUS = 200
 BASE_COLUMNS = ['id', 'status']
-BATCH_SIZE = 2
+BATCH_SIZE = 50
 
 def load_pdb_ids_list(path):
     "Load pdb ids json file as list. The file structure must be a list. for example: ['100D','1BQK','1DP5'...]"
@@ -27,22 +26,18 @@ def load_pdb_ids_list(path):
     return data
 
 
-
-
-            
-
 def download_pdbs_data(ids_path,
                        output_path='test_output.csv',
-                       features=['method', 'grow', 'ph', 'temp', 'details', 'sequence'],
+                       features=['method', 'ph', 'temp', 'details', 'sequence'],
                        type='xray',
-                       reset_download=True):
+                       reset=False):
     
     ids = load_pdb_ids_list(ids_path)
     errors = []
     
     #reset file
     if exists(output_path):
-        if reset_download:
+        if reset:
             #reset files with columns for all features
             with open(output_path, 'w') as f:
                 columns = BASE_COLUMNS +  features
@@ -52,6 +47,11 @@ def download_pdbs_data(ids_path,
             #filter ids that were not already downloaded
             ids = [id for id in ids \
                     if id not in pd.read_csv(output_path)['id'].to_list()]
+    else:
+        # if file dosnt exists reset files with columns for all features
+        with open(output_path, 'w') as f:
+            columns = BASE_COLUMNS +  features
+            f.write(','.join(columns) + '\n') 
     
     buffer = ''
     
@@ -117,7 +117,6 @@ def download_pdbs_data(ids_path,
                 
             buffer = ''
                 
-        sleep(1)
     
     #dump rest of buffer to file    
     with open(output_path, 'a') as f:
