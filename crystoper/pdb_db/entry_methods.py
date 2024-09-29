@@ -3,7 +3,7 @@ import requests
 from Bio import SeqIO
 from io import StringIO
 ENTRY_REST_API_DOWNLOAD_URL = "https://data.rcsb.org/rest/v1/core/entry/"
-
+N_TRIES = 3
 
 def download_entry_object(pdb_id):
     
