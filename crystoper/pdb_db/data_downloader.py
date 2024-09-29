@@ -8,64 +8,20 @@ from io import StringIO
 import pandas as pd
 from tqdm import tqdm
 
-from .entry_methods import *
-from .pdb_methods import *
+from .rest_api_methods import *
+from ..utils.data import make_dir
 
 OK_STATUS = 200
 BASE_COLUMNS = ['id', 'status']
 BATCH_SIZE = 50
 N_tries = 3
 
-def load_pdb_ids_list(path):
-    "Load pdb ids json file as list. The file structure must be a list. for example: ['100D','1BQK','1DP5'...]"
-    
-    with open(path, 'r') as f:
-        data = json.load(f)
-        
-    assert type(data) == list, "The structure of the input json file must be a single list"
-    
-    return data
-
-def get_features_dict_for_pdb_id(pdb_id, features):
-    
-        data = dict()
-        
-        #get entry
-        entry_response = download_entry_object(pdb_id)
-        
-        if entry_response.status_code == OK_STATUS:
-            method = get_experimental_method_from_entry_object(entry_response)
-            data['method'] = method
-        else:
-            data['method'] = "N/A"
-            
-        ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
-        
-        data['ph'] = ph
-        data['temp'] = temp
-        data['details'] = details
-                
-        #get pdb as text
-        pdb_response = download_pdb_object(pdb_id)
-        
-        data['status'] = pdb_response.status_code
-               
-        if pdb_response.status_code == OK_STATUS:
-                    
-            pdb_text = pdb_response.text
-            
-            if "sequence" in features:
-                data['sequence'] = get_sequence_from_pdb_text(pdb_text)
-
-            return data
-        
-        else:
-            return
+ENTRY_REST_API_URL = 'https://data.rcsb.org/rest/v1/core/entry/'
+POLYMER_ENTITY_API_URL = 'https://data.rcsb.org/rest/v1/core/polymer_entity/'
 
 def download_pdbs_data(ids_path,
                        output_path='test_output.csv',
-                       features=['method', 'ph', 'temp', 'details', 'sequence'],
-                       type='xray',
+                       features=['method', 'ph', 'temp', 'details', 'sequence', 'n_chains'],
                        reset=False):
     
     ids = load_pdb_ids_list(ids_path)
@@ -85,6 +41,9 @@ def download_pdbs_data(ids_path,
             ids = [id for id in ids \
                     if id not in existing_ids]
     else:
+        
+        make_dir(output_path)
+        
         # if file dosnt exists reset files with columns for all features
         with open(output_path, 'w') as f:
             columns = BASE_COLUMNS +  features
@@ -144,7 +103,48 @@ def download_pdbs_data(ids_path,
 
     print('PDB download is Done!')
     print(f'The following pdb ids could not be downloaded: {errors}')
+    
+    
+def load_pdb_ids_list(path):
+    "Load pdb ids json file as list. The file structure must be a list. for example: ['100D','1BQK','1DP5'...]"
+    
+    with open(path, 'r') as f:
+        data = json.load(f)
+        
+    assert type(data) == list, "The structure of the input json file must be a single list"
+    
+    return data
 
+def get_features_dict_for_pdb_id(pdb_id, features):
+    
+        data = dict()
+        
+        #get all data from the 'entry' PDB page
+        url = ENTRY_REST_API_URL + pdb_id 
+        entry_response = get_url(url)
+        
+        if entry_response.status_code == OK_STATUS:
+            method = get_experimental_method_from_entry_object(entry_response)
+            data['method'] = method
+        else:
+            data['method'] = "N/A"
+            
+        ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
+        
+        data['ph'] = ph
+        data['temp'] = temp
+        data['details'] = details
+                
+        #get polymer chain sequences from the PDB polymer_entity pages
+        url = POLYMER_ENTITY_API_URL + pdb_id
+        sequence, n_chains = get_all_sequences_from_polymer_entity(url)
+        
+        data['sequence'] = sequence
+        data['n_chains'] = n_chains
+        
+        return data
+        
+        
 def main():
     download_pdbs_data('/home/ofir/ofir_code/crystoper/pdb_db/20240927_pdb_entry_ids.json',
                        'test_output.csv')

@@ -2,10 +2,11 @@ import json
 import requests
 from Bio import SeqIO
 from io import StringIO
-
+from time import sleep
 N_TRIES = 3
 OK_STATUS = 200
 
+POLYMER_ENTITY_SEQUENCE_FIELD = 'pdbx_seq_one_letter_code'
 
 
 
@@ -17,7 +18,7 @@ def get_url(url):
         except:
             print(f"Could form connection with PDB while fetching {url}")
             print(f'try {i+1} out of {N_TRIES}')
-            sleep(3)
+            sleep(1)
 
 
 def get_experimental_method_from_entry_object(response):
@@ -74,14 +75,32 @@ def get_all_sequences_from_polymer_entity(root_url):
     """
     
     sequences = []
-    i = 1
+    i = 0
         
     while True:
-        url = root_url + str(i) 
-        response = get_url(url)
-    
-        #break on error status (when the polimer id is missing an error response is return)
-        if response.status != OK_STATUS:
-            return ';'.join(sequences)
         
         i += 1
+        url = root_url + f'/{i}' 
+        response = get_url(url)
+        
+        if response.status_code == OK_STATUS:
+            
+            data = response.json()
+            
+            #skip non protein
+            if data['entity_poly']['rcsb_entity_polymer_type'].lower() != 'protein':
+                continue
+            
+            else:
+                sequences.append(data['entity_poly']['pdbx_seq_one_letter_code'])
+            
+    
+        #break on error status (when the polimer id is missing an error response is return)
+        if response.status_code != OK_STATUS:
+            return ';'.join(sequences), i
+        
+        #stop condition 
+        if i > 20:
+            return '', 0
+        
+        
