@@ -12,8 +12,8 @@ from .rest_api_methods import *
 from ..utils.data import make_dir
 
 OK_STATUS = 200
-BASE_COLUMNS = ['id', 'status']
-BATCH_SIZE = 50
+BASE_COLUMNS = ['id', 'download_status']
+DOWNLOAD_BATCH_SIZE = 50
 N_tries = 3
 
 ENTRY_REST_API_URL = 'https://data.rcsb.org/rest/v1/core/entry/'
@@ -64,7 +64,7 @@ def download_pdbs_data(ids_path,
             #if data was downloaded
             if data:
                 buffer += f'{pdb_id}'
-                buffer += f",{data.get('status')}"
+                buffer += f",{data.get('download_status')}"
                 
                 #write all acquired data to buffer according to features input order (which is the columns order in  the output csv)
                 for feature in features:
@@ -81,12 +81,12 @@ def download_pdbs_data(ids_path,
             errors.append(pdb_id)
         
         #dump buffer to file
-        if i > 0 and i % BATCH_SIZE == 0:
+        if i > 0 and i % DOWNLOAD_BATCH_SIZE == 0:
             
             with open(output_path, 'a') as f:
                 f.write(buffer)
             
-            print(f'Wrote batch {i//BATCH_SIZE} out of {len(ids)//BATCH_SIZE} to file')
+            print(f'Wrote batch {i//DOWNLOAD_BATCH_SIZE} out of {len(ids)//DOWNLOAD_BATCH_SIZE} to file')
             if len(errors) == 0:
                 print('No errors found so far....')
             else:
@@ -126,14 +126,17 @@ def get_features_dict_for_pdb_id(pdb_id, features):
         if entry_response.status_code == OK_STATUS:
             method = get_experimental_method_from_entry_object(entry_response)
             data['method'] = method
+            
+            ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
+        
+            data['ph'] = ph
+            data['temp'] = temp
+            data['details'] = details
+        
         else:
             data['method'] = "N/A"
             
-        ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
         
-        data['ph'] = ph
-        data['temp'] = temp
-        data['details'] = details
                 
         #get polymer chain sequences from the PDB polymer_entity pages
         url = POLYMER_ENTITY_API_URL + pdb_id
