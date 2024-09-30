@@ -9,7 +9,10 @@ import pandas as pd
 from tqdm import tqdm
 
 from .rest_api_methods import *
-from ..utils.data import make_dir
+from ..utils.data import make_dir, load_json, dump_json, filter_pdb_polymer_ids
+from .. import config
+
+from rcsbsearchapi.search import TextQuery
 
 OK_STATUS = 200
 BASE_COLUMNS = ['id', 'download_status']
@@ -18,11 +21,22 @@ N_tries = 3
 
 ENTRY_REST_API_URL = 'https://data.rcsb.org/rest/v1/core/entry/'
 POLYMER_ENTITY_API_URL = 'https://data.rcsb.org/rest/v1/core/polymer_entity/'
+PDB_IDS_TEXT_QUERY = 'experimental_method:x-ray'
 
 def download_pdbs_data(ids_path,
                        output_path='test_output.csv',
                        features=['method', 'ph', 'temp', 'details', 'sequence', 'n_chains'],
-                       reset=False):
+                       reset=False,
+                       update_ids=False,
+                       update_pe=False):
+    
+    if update_ids:
+        update_ids_list(config.pdb_ids_path)
+    
+    if update_pe:
+        
+        relevant_ids = load_json(config.pdb_ids_path)
+        update_polymer_entities_list(config.pdb_polymer_entities_path, relevant_ids)
     
     ids = load_pdb_ids_list(ids_path)
     errors = []
@@ -105,8 +119,41 @@ def download_pdbs_data(ids_path,
 
     print('PDB download is Done!')
     print(f'The following pdb ids could not be downloaded: {errors}')
+
+def update_ids_list(path):
     
+    query = TextQuery(PDB_IDS_TEXT_QUERY)
     
+    print(f"\nFetching all pdb ids with the following filter: '{PDB_IDS_TEXT_QUERY}'. This should take few minutes...")
+    
+    ids = list(query('entry')) 
+    
+    dump_json(ids, path)
+        
+    print(f'{len(ids)}  where fetched from PDB and dumped to {path}')
+
+
+def update_polymer_entities_list(path, relevant_ids):
+    
+    query = TextQuery(PDB_IDS_TEXT_QUERY)
+    
+    print(f"\nFetching all pdb polymer entities with the following filter: '{PDB_IDS_TEXT_QUERY}'. This should take few minutes...")
+    
+    polymer_ids = []
+    
+    for id in tqdm(query('polymer_entity'), total=300000):
+        polymer_ids.append(id)
+    
+    print(f'{len(polymer_ids)} polymer entities id were fetched from pdb')
+    
+    #validate data integrity by filtering polymer entities with the pdb entry list
+    filtered_polymer_ids = filter_pdb_polymer_ids(polymer_ids, relevant_ids)
+    
+    dump_json(filtered_polymer_ids, path)
+    
+    print(f'After filtration for relevant ids (x-ray) {len(filtered_polymer_ids)} polymer entities ids were dumped to {path}')
+    
+
 def load_pdb_ids_list(path):
     "Load pdb ids json file as list. The file structure must be a list. for example: ['100D','1BQK','1DP5'...]"
     
