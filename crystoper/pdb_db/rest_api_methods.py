@@ -18,7 +18,7 @@ def get_url(url):
         except:
             print(f"Could form connection with PDB while fetching {url}")
             print(f'try {i+1} out of {N_TRIES}')
-            sleep(1)
+            sleep(i+1)
 
 
 def get_experimental_method_from_entry_object(response):
@@ -64,12 +64,14 @@ def get_all_sequences_from_polymer_entity(root_url):
     """iterates all polymer entities and retrieve sequences until polymer id is missing (error response)
     
     ARGS:
-        root_url (str): a string with the polimer entity root path. for example: 'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/'
-                        (given the above input, the function will download from 'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/1' ,
-                        'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/2 and so on until error page is found')
+        root_url (str): a string with the polimer entity root path. 
                         
     RETURN:
         (str): a concat of all polymer chains for the pdb id in the root_url with ';' sep.
+        
+    for example: given root_url='https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/'
+                        The function will download data from 'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/1' ,
+                        'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/2 and so on until error page is found - meaning no more eateries')
     
     
     """

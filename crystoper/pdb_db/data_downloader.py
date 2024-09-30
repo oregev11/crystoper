@@ -53,7 +53,9 @@ def download_pdbs_data(ids_path,
     
     print("Starting PDB data downloading....")
     
-    for i, pdb_id in tqdm(enumerate(ids), total=len(ids)):
+    for i, pdb_id in tqdm(enumerate(ids),
+                          initial=len(existing_ids),
+                          total=len(ids + existing_ids)):
         
         data = None
         
