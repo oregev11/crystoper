@@ -59,50 +59,98 @@ def get_crystal_grow_cond_from_entry_object(response):
     
     return ph, temp, details
 
-
-def get_all_sequences_from_polymer_entity(root_url):
-    """iterates all polymer entities and retrieve sequences until polymer id is missing (error response)
-    
-    ARGS:
-        root_url (str): a string with the polimer entity root path. 
-                        
-    RETURN:
-        (str): a concat of all polymer chains for the pdb id in the root_url with ';' sep.
-        
-    for example: given root_url='https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/'
-                        The function will download data from 'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/1' ,
-                        'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/2 and so on until error page is found - meaning no more eateries')
-    
-    
+def get_features_dict_for_pdb_id(pdb_id):
+    """get experiment features dict based on a PDB  entry page.
     """
+        
+    data = dict()
     
-    sequences = []
-    i = 0
+    #get all data from the 'entry' PDB page
+    url = ENTRY_REST_API_URL + pdb_id 
+    entry_response = get_url(url)
+    
+    if entry_response.status_code == OK_STATUS:
+        method = get_experimental_method_from_entry_object(entry_response)
+        data['method'] = method
         
-    while True:
+        ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
+    
+        data['ph'] = ph
+        data['temp'] = temp
+        data['details'] = details
+    
+    else:
+        data['method'] = "N/A"
+       
+    return data
+
+
+
+def add_polymer_entity_info_to_data(data, pe_id):
+    
+    """add info obtained from polymer entity page to the data"""
+
+
+    #get polymer chain sequences from the PDB polymer_entity pages
+    url = POLYMER_ENTITY_API_URL + pe_id.replace('_', '/')
+    polymer_entity = get_url(url)
+    
+    for i in range(N_TRIES):
+        if polymer_entity.status_code == OK_STATUS:
+            
+            pe_data = polymer_entity.json()
+            
+            data['sequence'] = pe_data.get('pdbx_seq_one_letter_code')
+            data['polymer_type'] = pe_data.get('rcsb_entity_polymer_type')
+        else:
+            sleep(1)
+    
+    return data
+            
+
+# def get_all_sequences_from_polymer_entity(root_url):
+#     """iterates all polymer entities and retrieve sequences until polymer id is missing (error response)
+    
+#     ARGS:
+#         root_url (str): a string with the polimer entity root path. 
+                        
+#     RETURN:
+#         (str): a concat of all polymer chains for the pdb id in the root_url with ';' sep.
         
-        i += 1
-        url = root_url + f'/{i}' 
-        response = get_url(url)
+#     for example: given root_url='https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/'
+#                         The function will download data from 'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/1' ,
+#                         'https://data.rcsb.org/rest/v1/core/polymer_entity/9F9L/2 and so on until error page is found - meaning no more eateries')
+    
+    
+#     """
+    
+#     sequences = []
+#     i = 0
         
-        if response.status_code == OK_STATUS:
+#     while True:
+        
+#         i += 1
+#         url = root_url + f'/{i}' 
+#         response = get_url(url)
+        
+#         if response.status_code == OK_STATUS:
             
-            data = response.json()
+#             data = response.json()
             
-            #skip non protein
-            if data['entity_poly']['rcsb_entity_polymer_type'].lower() != 'protein':
-                continue
+#             #skip non protein
+#             if data['entity_poly']['rcsb_entity_polymer_type'].lower() != 'protein':
+#                 continue
             
-            else:
-                sequences.append(data['entity_poly']['pdbx_seq_one_letter_code'])
+#             else:
+#                 sequences.append(data['entity_poly']['pdbx_seq_one_letter_code'])
             
     
-        #break on error status (when the polimer id is missing an error response is return)
-        if response.status_code != OK_STATUS:
-            return ';'.join(sequences), i
+#         #break on error status (when the polimer id is missing an error response is return)
+#         if response.status_code != OK_STATUS:
+#             return ';'.join(sequences), i
         
-        #stop condition 
-        if i > 20:
-            return '', 0
+#         #stop condition 
+#         if i > 20:
+#             return '', 0
         
         

@@ -15,7 +15,7 @@ from .. import config
 from rcsbsearchapi.search import TextQuery
 
 OK_STATUS = 200
-BASE_COLUMNS = ['id', 'download_status']
+BASE_COLUMNS = ['id', 'polymer_index', 'download_status'] 
 DOWNLOAD_BATCH_SIZE = 50
 N_tries = 3
 
@@ -43,17 +43,18 @@ def download_pdbs_data(ids_path,
     
     #reset file
     if exists(output_path):
-        if reset:
-            #reset files with columns for all features
-            with open(output_path, 'w') as f:
-                columns = BASE_COLUMNS +  features
-                f.write(','.join(columns) + '\n') 
+        pass
+        # if reset:
+        #     #reset files with columns for all features
+        #     with open(output_path, 'w') as f:
+        #         columns = BASE_COLUMNS +  features
+        #         f.write(','.join(columns) + '\n') 
         
-        else:
-            #filter ids that were not already downloaded
-            existing_ids = pd.read_csv(output_path)['id'].to_list()
-            ids = [id for id in ids \
-                    if id not in existing_ids]
+        # else:
+        #     #filter ids that were not already downloaded
+        #     existing_ids = pd.read_csv(output_path)['id'].to_list()
+        #     ids = [id for id in ids \
+        #             if id not in existing_ids]
     else:
         
         make_dir(output_path)
@@ -67,15 +68,19 @@ def download_pdbs_data(ids_path,
     
     print("Starting PDB data downloading....")
     
-    for i, pdb_id in tqdm(enumerate(ids),
-                          initial=len(existing_ids),
-                          total=len(ids + existing_ids)):
+    #get polymer entities ids 
+    pe_ids = load_json(config.pdb_polymer_entities_path)
+    
+    for i, pe_id in tqdm(enumerate(pe_ids)):
         
         data = None
         
+        #pe_id has '1AON_1' format
+        pdb_id, polymer_index = pe_id.split('_')
+        
         for n in range(N_tries):
             
-            data = get_features_dict_for_pdb_id(pdb_id, features)
+            data = get_features_dict_for_pdb_id(pdb_id)
             
             #if data was downloaded
             if data:
@@ -92,9 +97,11 @@ def download_pdbs_data(ids_path,
             else:
                 print(f"Failed downloading data for {pdb_id}. try {n+1} out of {N_tries}")
                 sleep(n+1)
-        
+            
         if not data:
             errors.append(pdb_id)
+            
+        data = add_polymer_entity_info_to_data(data, pe_id)
         
         #dump buffer to file
         if i > 0 and i % DOWNLOAD_BATCH_SIZE == 0:
@@ -164,37 +171,8 @@ def load_pdb_ids_list(path):
     
     return data
 
-def get_features_dict_for_pdb_id(pdb_id, features):
-    
-        data = dict()
-        
-        #get all data from the 'entry' PDB page
-        url = ENTRY_REST_API_URL + pdb_id 
-        entry_response = get_url(url)
-        
-        if entry_response.status_code == OK_STATUS:
-            method = get_experimental_method_from_entry_object(entry_response)
-            data['method'] = method
-            
-            ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
-        
-            data['ph'] = ph
-            data['temp'] = temp
-            data['details'] = details
-        
-        else:
-            data['method'] = "N/A"
-            
-        
-                
-        #get polymer chain sequences from the PDB polymer_entity pages
-        url = POLYMER_ENTITY_API_URL + pdb_id
-        sequence, n_chains = get_all_sequences_from_polymer_entity(url)
-        
-        data['sequence'] = sequence
-        data['n_chains'] = n_chains
-        
-        return data
+
+
         
         
 def main():
