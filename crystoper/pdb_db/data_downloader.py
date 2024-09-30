@@ -75,8 +75,8 @@ def download_pdbs_data(ids_path,
         
         data = None
         
-        #pe_id has '1AON_1' format
-        pdb_id, polymer_index = pe_id.split('_')
+        #pe_id has '1AON-1' format
+        pdb_id, polymer_index = pe_id.split('-')
         
         for n in range(N_tries):
             
