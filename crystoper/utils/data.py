@@ -1,13 +1,15 @@
 import os
 import json 
 import pandas as pd
+from os.path import isfile, dirname
+
 
 ENTITY_SPLIT_CHAR = '_'
 
 def make_dir(path):
-    dir_path = os.path.dirname(path)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+    
+    if not os.path.exists(path):
+        os.makedirs(path)
         
 def load_json(path):
     with open(path, 'r') as f:

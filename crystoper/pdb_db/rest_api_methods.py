@@ -3,6 +3,9 @@ import requests
 from Bio import SeqIO
 from io import StringIO
 from time import sleep
+from ..utils.data import dump_json
+from os.path import join
+
 N_TRIES = 3
 OK_STATUS = 200
 
@@ -24,6 +27,18 @@ def get_url(url):
             
     return None
 
+## download full record methods
+
+def download_entry_as_json(pdb_id, folder):
+    
+    url = ENTRY_REST_API_URL + pdb_id
+    response = get_url(url)
+    
+    if response:
+        path = join(folder, pdb_id) + '.json'
+        dump_json(response.json(), path)
+    else:
+        print(f'Could not get download entry from {url}')
 
 def get_experimental_method_from_entry_object(response):
     """'method' refer to the method used to determine the structure ('X-RAY DIFFRACTION', 'SOLUTION NMR') """
