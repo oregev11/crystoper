@@ -15,93 +15,89 @@ from .. import config
 from rcsbsearchapi.search import TextQuery
 
 OK_STATUS = 200
-BASE_COLUMNS = ['id', 'polymer_index', 'download_status'] 
-DOWNLOAD_BATCH_SIZE = 50
+BASE_COLUMNS = ['id', 'polymer_index'] 
+DOWNLOAD_BATCH_SIZE = 10
 N_tries = 3
 
-ENTRY_REST_API_URL = 'https://data.rcsb.org/rest/v1/core/entry/'
-POLYMER_ENTITY_API_URL = 'https://data.rcsb.org/rest/v1/core/polymer_entity/'
+
 PDB_IDS_TEXT_QUERY = 'experimental_method:x-ray'
 
 def download_pdbs_data(ids_path,
                        output_path='test_output.csv',
-                       features=['method', 'ph', 'temp', 'details', 'sequence', 'n_chains'],
+                       features=['method', 'ph', 'temp', 'details', 'sequence', 'polymer_type'],
                        reset=False,
-                       update_ids=False,
-                       update_pe=False):
+                       fetch_ids=False,
+                       fetch_pe=False):
     
-    if update_ids:
-        update_ids_list(config.pdb_ids_path)
+    #fetch all relevant pdb ids from the PDB server (if not - they will be read from local file)
+    if fetch_ids:
+        update_entry_ids_list(config.pdb_ids_path)
     
-    if update_pe:
-        
+    #fetch all relevant polymer-entities from the PDB server (if not - they will be read from local file)
+    if fetch_pe:
         relevant_ids = load_json(config.pdb_ids_path)
         update_polymer_entities_list(config.pdb_polymer_entities_path, relevant_ids)
     
-    ids = load_pdb_ids_list(ids_path)
     errors = []
     
-    #reset file
-    if exists(output_path):
-        pass
-        # if reset:
-        #     #reset files with columns for all features
-        #     with open(output_path, 'w') as f:
-        #         columns = BASE_COLUMNS +  features
-        #         f.write(','.join(columns) + '\n') 
-        
-        # else:
-        #     #filter ids that were not already downloaded
-        #     existing_ids = pd.read_csv(output_path)['id'].to_list()
-        #     ids = [id for id in ids \
-        #             if id not in existing_ids]
-    else:
-        
-        make_dir(output_path)
-        
-        # if file dosnt exists reset files with columns for all features
-        with open(output_path, 'w') as f:
-            columns = BASE_COLUMNS +  features
-            f.write(','.join(columns) + '\n') 
+    make_dir(output_path)
     
+    #reset output file
+    if not exists(output_path) or reset:
+        
+            #reset files with columns for all features
+            with open(output_path, 'w') as f:
+                columns = BASE_COLUMNS +  features
+                f.write(','.join(columns) + '\n') 
+        
+        
     buffer = ''
     
     print("Starting PDB data downloading....")
     
-    #get polymer entities ids 
+    #get the full list of polymer entities ids 
     pe_ids = load_json(config.pdb_polymer_entities_path)
     
-    for i, pe_id in tqdm(enumerate(pe_ids)):
+    #filter-out polymer entities for which data was already downloaded
+    already_downloaded = get_already_downloaded_pe_ids()
+    pe_ids = [pe_id for pe_id in pe_ids if pe_id not in already_downloaded]
+    
+    #iterate all pe_ids and download data
+    for i, pe_id in tqdm(enumerate(pe_ids),
+                         initial=len(already_downloaded),
+                         total=len(pe_ids) - len(already_downloaded)):
         
-        data = None
+        entry_data = None
+        polymer_entity_data = None
         
-        #pe_id has '1AON-1' format
+        #pe_id has '1AON-1' format.
         pdb_id, polymer_index = pe_id.split('-')
         
-        for n in range(N_tries):
-            
-            data = get_features_dict_for_pdb_id(pdb_id)
-            
-            #if data was downloaded
-            if data:
-                buffer += f'{pdb_id}'
-                buffer += f",{data.get('download_status')}"
+        #gen all relevant data from the PDB server
+        entry_data = get_pdb_entry_data(pdb_id)
+        polymer_entity_data = get_pdb_polymer_entity_data(pe_id)
+                        
+        if not entry_data:
+            print(f'Could not get {pdb_id} entry data')  
+            errors.append(pdb_id)  
+            continue            
+        
+        if not polymer_entity_data:
+            print(f'Could not get {pe_id} polymer entity data data')     
+            errors.append(pe_id)           
+            continue
+        
+        #merge data dictionaries
+        data = entry_data
+        data.update(polymer_entity_data)
                 
-                #write all acquired data to buffer according to features input order (which is the columns order in  the output csv)
-                for feature in features:
-                    buffer += f",{data.get(feature)}"
+        #write data to buffer
+        buffer += f'{pdb_id}'
+        buffer += f',{polymer_index}'
+        for feature in features:
+            buffer += f",{data.get(feature)}"
 
-                buffer += '\n'
-                break
-            
-            else:
-                print(f"Failed downloading data for {pdb_id}. try {n+1} out of {N_tries}")
-                sleep(n+1)
-            
-        if not data:
-            errors.append(pdb_id)
-            
-        data = add_polymer_entity_info_to_data(data, pe_id)
+        buffer += '\n'
         
         #dump buffer to file
         if i > 0 and i % DOWNLOAD_BATCH_SIZE == 0:
@@ -109,7 +105,7 @@ def download_pdbs_data(ids_path,
             with open(output_path, 'a') as f:
                 f.write(buffer)
             
-            print(f'Wrote batch {i//DOWNLOAD_BATCH_SIZE} out of {len(ids)//DOWNLOAD_BATCH_SIZE} to file')
+            print(f'Wrote batch {i//DOWNLOAD_BATCH_SIZE} out of {len(pe_ids)//DOWNLOAD_BATCH_SIZE} to file')
             if len(errors) == 0:
                 print('No errors found so far....')
             else:
@@ -127,7 +123,8 @@ def download_pdbs_data(ids_path,
     print('PDB download is Done!')
     print(f'The following pdb ids could not be downloaded: {errors}')
 
-def update_ids_list(path):
+def update_entry_ids_list(path):
+    """update entry ids list with the latest polymer entities ids from the PDB"""
     
     query = TextQuery(PDB_IDS_TEXT_QUERY)
     
@@ -141,6 +138,7 @@ def update_ids_list(path):
 
 
 def update_polymer_entities_list(path, relevant_ids):
+    """update polimer entities list with the latest polymer entities ids from the PDB"""
     
     query = TextQuery(PDB_IDS_TEXT_QUERY)
     
@@ -161,16 +159,13 @@ def update_polymer_entities_list(path, relevant_ids):
     print(f'After filtration for relevant ids (x-ray) {len(filtered_polymer_ids)} polymer entities ids were dumped to {path}')
     
 
-def load_pdb_ids_list(path):
-    "Load pdb ids json file as list. The file structure must be a list. for example: ['100D','1BQK','1DP5'...]"
+def get_already_downloaded_pe_ids():
     
-    with open(path, 'r') as f:
-        data = json.load(f)
-        
-    assert type(data) == list, "The structure of the input json file must be a single list"
+    df = pd.read_csv(config.downloaded_data_path)
+    already_downloaded = list(df['id'] + '-' + df['polymer_index'].astype(str))
+    already_downloaded = set(already_downloaded)
     
-    return data
-
+    return already_downloaded
 
 
         

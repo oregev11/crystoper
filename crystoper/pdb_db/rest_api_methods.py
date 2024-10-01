@@ -6,6 +6,8 @@ from time import sleep
 N_TRIES = 3
 OK_STATUS = 200
 
+ENTRY_REST_API_URL = 'https://data.rcsb.org/rest/v1/core/entry/'
+POLYMER_ENTITY_API_URL = 'https://data.rcsb.org/rest/v1/core/polymer_entity/'
 POLYMER_ENTITY_SEQUENCE_FIELD = 'pdbx_seq_one_letter_code'
 
 
@@ -19,6 +21,8 @@ def get_url(url):
             print(f"Could form connection with PDB while fetching {url}")
             print(f'try {i+1} out of {N_TRIES}')
             sleep(i+1)
+            
+    return None
 
 
 def get_experimental_method_from_entry_object(response):
@@ -59,7 +63,7 @@ def get_crystal_grow_cond_from_entry_object(response):
     
     return ph, temp, details
 
-def get_features_dict_for_pdb_id(pdb_id):
+def get_pdb_entry_data(pdb_id):
     """get experiment features dict based on a PDB  entry page.
     """
         
@@ -69,42 +73,39 @@ def get_features_dict_for_pdb_id(pdb_id):
     url = ENTRY_REST_API_URL + pdb_id 
     entry_response = get_url(url)
     
-    if entry_response.status_code == OK_STATUS:
-        method = get_experimental_method_from_entry_object(entry_response)
-        data['method'] = method
+    if entry_response:
+        if entry_response.status_code == OK_STATUS:
+            method = get_experimental_method_from_entry_object(entry_response)
+            data['method'] = method
+            
+            ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
         
-        ph, temp, details = get_crystal_grow_cond_from_entry_object(entry_response)
-    
-        data['ph'] = ph
-        data['temp'] = temp
-        data['details'] = details
-    
-    else:
-        data['method'] = "N/A"
-       
+            data['ph'] = ph
+            data['temp'] = temp
+            data['details'] = details
+        
     return data
 
 
 
-def add_polymer_entity_info_to_data(data, pe_id):
-    
+def get_pdb_polymer_entity_data(pe_id):
+        
     """add info obtained from polymer entity page to the data"""
-
+    
+    data = dict()
 
     #get polymer chain sequences from the PDB polymer_entity pages
-    url = POLYMER_ENTITY_API_URL + pe_id.replace('_', '/')
+    url = POLYMER_ENTITY_API_URL + pe_id.replace('-', '/')
     polymer_entity = get_url(url)
     
-    for i in range(N_TRIES):
+    if polymer_entity:
         if polymer_entity.status_code == OK_STATUS:
             
             pe_data = polymer_entity.json()
             
-            data['sequence'] = pe_data.get('pdbx_seq_one_letter_code')
-            data['polymer_type'] = pe_data.get('rcsb_entity_polymer_type')
-        else:
-            sleep(1)
-    
+            data['sequence'] = pe_data.get('entity_poly').get('pdbx_seq_one_letter_code')
+            data['polymer_type'] = pe_data.get('entity_poly').get('rcsb_entity_polymer_type')
+            
     return data
             
 
