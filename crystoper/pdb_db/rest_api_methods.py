@@ -39,6 +39,17 @@ def download_entry_as_json(pdb_id, folder):
         dump_json(response.json(), path)
     else:
         print(f'Could not get download entry from {url}')
+        
+def download_poly_entity_as_json(entity_id, folder):
+    
+    url = POLYMER_ENTITY_API_URL + entity_id.replace('-', '/') #convert, for example 1AON-1 to 1AON/1 to fit the address format
+    response = get_url(url)
+    
+    if response:
+        path = join(folder, entity_id) + '.json'
+        dump_json(response.json(), path)
+    else:
+        print(f'Could not get download polymer entity from {url}')
 
 def get_experimental_method_from_entry_object(response):
     """'method' refer to the method used to determine the structure ('X-RAY DIFFRACTION', 'SOLUTION NMR') """

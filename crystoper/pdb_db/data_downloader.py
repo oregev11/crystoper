@@ -1,5 +1,6 @@
 from time import sleep
-from os.path import exists
+from os.path import exists, join
+from pathlib import Path
 import argparse
 import json
 import requests
@@ -7,7 +8,7 @@ from Bio import SeqIO
 from io import StringIO
 import pandas as pd
 from tqdm import tqdm
-from glob import glob
+import glob
 import os
 
 from .rest_api_methods import *
@@ -20,7 +21,7 @@ OK_STATUS = 200
 BASE_COLUMNS = ['id', 'polymer_index'] 
 DOWNLOAD_BATCH_SIZE = 10
 N_tries = 3
-
+PDB_HASH_RANGE = 1000
 
 PDB_IDS_TEXT_QUERY = 'experimental_method:x-ray'
 
@@ -42,21 +43,50 @@ def download_pdbs_data(ids_path,
         relevant_ids = load_json(config.pdb_ids_path)
         update_polymer_entities_list(config.pdb_polymer_entities_path, relevant_ids)
     
+    #download entires json files
     if download_entries:
         
-        make_dir(config.pdb_entries_path)
+        root_path = config.pdb_entries_path
+        make_dir(root_path)
         
         entry_ids = load_json(config.pdb_entries_list_path)
-        existing_entry_ids = get_already_downloaded_entries()
+        existing_entry_ids = list_file_stems(root_path)
         
-        filterd_entry_ids = [id for id in entry_ids if id not in set(existing_entry_ids)]
+        filtered_entry_ids = [id for id in entry_ids if id not in set(existing_entry_ids)]
         
-        print('\nStarting pdb entries download. this might take a few days  ¯\_(ツ)_/¯ .... ')
-        
-        for entry_id in tqdm(filterd_entry_ids, initial=len(existing_entry_ids),
+        print('\nStarting pdb entries download. this might take a few days  ¯\_(ツ)_/¯\
+            \nBut! if you stop and rerun - it will automatically continue from last checkpoint...')
+               
+        for i, entry_id in tqdm(enumerate(filtered_entry_ids), initial=len(existing_entry_ids),
                                                 total=len(entry_ids)):
-            download_entry_as_json(entry_id, config.pdb_entries_path)
+            
+            #create a subdir (to avoid too much files in same folder)
+            path = join(root_path, convert_id_to_subfolder(entry_id))
+            make_dir(path)
+            
+            download_entry_as_json(entry_id, path)
     
+    if download_poly_entities:
+        
+        root_path = config.pdb_polymer_entities_path
+        make_dir(root_path)
+        
+        #filter for un-downloaded entities
+        entities_ids = load_json(config.pdb_polymer_entities_list_path)
+        existing_poly_entities_ids = list_file_stems(config.pdb_polymer_entities_path)
+        filtered_poly_entity_ids = [id for id in entities_ids if id not in set(existing_poly_entities_ids)]
+        
+        print('\nStarting pdb polymer entities download. this might take a few days, but you can stop and resume  ¯\_(ツ)_/¯  \
+            \nBut! if you stop and rerun - it will automatically continue from last checkpoint...')
+        
+        for poly_entity_id in tqdm(filtered_poly_entity_ids, initial=len(existing_poly_entities_ids),
+                                                        total=len(entities_ids)):
+            
+            #create a subdir (to avoid too much files in same folder)
+            path = join(root_path, convert_id_to_subfolder(poly_entity_id))
+            make_dir(path)
+            download_poly_entity_as_json(poly_entity_id, path)
+        
             
         
     # errors = []
@@ -179,11 +209,14 @@ def update_polymer_entities_list(path, relevant_ids):
     
     print(f'After filtration for relevant ids (x-ray) {len(filtered_polymer_ids)} polymer entities ids were dumped to {path}')
     
-def get_already_downloaded_entries():
-    
-    files = os.listdir(config.pdb_entries_path)
-    
-    return [file.split('.')[0] for file in files]
+def list_file_stems(path):
+ 
+    files = list(glob.iglob(path + '/**/*.*', recursive=True))
+ 
+    return [Path(file).stem for file in files]
+
+def convert_id_to_subfolder(pdb_id):
+    return pdb_id[1:3]
 
 # def get_already_downloaded_pe_ids():
     
