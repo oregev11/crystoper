@@ -1,6 +1,7 @@
 {
     "pdb_entries_list_path": "crystoper/data/pdb_data/20240927_pdb_entry_ids.json",
     "pdb_entries_path": "crystoper/data/pdb_data/entries",
+    "parsed_pdb_entries_path" : "crystoper/data/pdb_data/parsed_entries.csv",
     "pdb_polymer_entities_list_path": "crystoper/data/pdb_data/20240927_pdb_polymer_entities.json",
     "pdb_polymer_entities_path": "crystoper/data/pdb_data/polymer_entities",
     "downloaded_data_path": "crystoper/data/pdb_data/data.csv"

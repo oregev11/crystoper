@@ -1,12 +1,16 @@
 from glob import glob
 from os.path import join
-from ..utils.data import load_json
+import pandas as pd
+from tqdm import tqdm
+from ..utils.data import load_json, write_to_csv_in_batches
+from .. import config
+
 
 ENTRY_FEATURES_NODES_PATHS = {'struct_method': ['exptl', 0, 'method'],
                               'crystal_method': ['exptl_crystal_grow', 0, 'method'],
                               'ph': ['exptl_crystal_grow', 0, 'p_h'],
-                              'temp': ['exptl_crystal_grow', 0, 'temp']}
-
+                              'temp': ['exptl_crystal_grow', 0, 'temp'],
+                              'pdbx_details': ['exptl_crystal_grow', 0, 'pdbx_details']}
 
 def pdb_json_parser(entries_folder,
                     poly_entities_folder):
@@ -14,17 +18,6 @@ def pdb_json_parser(entries_folder,
     if entries_folder:
         parse_entries(entries_folder)
         
-
-def parse_entries(folder):
-    
-    for path in glob(join(folder, '**', '*.json')):
-        jsn = load_json()
-        
-        
-    
-    
-
-
 
 def get_item(jsn, nodes_path):
     """recursive method to get item from a json like object (nested dicts and lists)
@@ -35,6 +28,9 @@ def get_item(jsn, nodes_path):
             int (for a list access).
             for example: given nodes_path = ['conditions', 'temp', 2] the object to fetch will be jsn.conditions.temp[2]
     """
+    
+    if not jsn:
+        return None
     
     if len(nodes_path) == 0:
         return jsn
