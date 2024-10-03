@@ -6,7 +6,7 @@ from time import sleep
 from ..utils.data import dump_json
 from os.path import join
 
-N_TRIES = 3
+N_TRIES = 4
 OK_STATUS = 200
 
 ENTRY_REST_API_URL = 'https://data.rcsb.org/rest/v1/core/entry/'
@@ -21,7 +21,7 @@ def get_url(url):
         try:
             return requests.get(url)
         except:
-            print(f"Could form connection with PDB while fetching {url}")
+            print(f"Could form not connection with PDB while fetching {url}")
             print(f'try {i+1} out of {N_TRIES}')
             sleep(i+1)
             

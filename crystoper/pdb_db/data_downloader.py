@@ -50,9 +50,12 @@ def download_pdbs_data(ids_path,
         make_dir(root_path)
         
         entry_ids = load_json(config.pdb_entries_list_path)
+        
+        print('fetching all entries already downloaded...')
         existing_entry_ids = list_file_stems(root_path)
         
-        filtered_entry_ids = [id for id in entry_ids if id not in set(existing_entry_ids)]
+        print('{}')
+        filtered_entry_ids = [id for id in entry_ids if not id in existing_entry_ids]
         
         print('\nStarting pdb entries download. this might take a few days  ¯\_(ツ)_/¯\
             \nBut! if you stop and rerun - it will automatically continue from last checkpoint...')
@@ -213,9 +216,10 @@ def list_file_stems(path):
  
     files = list(glob.iglob(path + '/**/*.*', recursive=True))
  
-    return [Path(file).stem for file in files]
+    return {Path(file).stem for file in files}
 
 def convert_id_to_subfolder(pdb_id):
+    """convert pdb_id to a unique subfolder name by getting the two middle chars of the pdb_id"""
     return pdb_id[1:3]
 
 # def get_already_downloaded_pe_ids():
