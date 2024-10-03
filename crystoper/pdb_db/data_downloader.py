@@ -57,9 +57,8 @@ def download_pdbs_data(ids_path,
         print('{}')
         filtered_entry_ids = [id for id in entry_ids if not id in existing_entry_ids]
         
-        print('\nStarting pdb entries download. this might take a few days  ¯\_(ツ)_/¯\
-            \nBut! if you stop and rerun - it will automatically continue from last checkpoint...')
-               
+        print('\nStarting pdb entries download. this might take a few days... ¯\_(ツ)_/¯\nbut you can stop and resume automatically from last checkpoint')
+        
         for i, entry_id in tqdm(enumerate(filtered_entry_ids), initial=len(existing_entry_ids),
                                                 total=len(entry_ids)):
             
@@ -75,12 +74,12 @@ def download_pdbs_data(ids_path,
         make_dir(root_path)
         
         #filter for un-downloaded entities
+        
         entities_ids = load_json(config.pdb_polymer_entities_list_path)
         existing_poly_entities_ids = list_file_stems(config.pdb_polymer_entities_path)
-        filtered_poly_entity_ids = [id for id in entities_ids if id not in set(existing_poly_entities_ids)]
+        filtered_poly_entity_ids = [id for id in entities_ids if id not in existing_poly_entities_ids]
         
-        print('\nStarting pdb polymer entities download. this might take a few days, but you can stop and resume  ¯\_(ツ)_/¯  \
-            \nBut! if you stop and rerun - it will automatically continue from last checkpoint...')
+        print('\nStarting pdb polymer entities download. this might take a few days... ¯\_(ツ)_/¯\nbut you can stop and resume automatically from last checkpoint')
         
         for poly_entity_id in tqdm(filtered_poly_entity_ids, initial=len(existing_poly_entities_ids),
                                                         total=len(entities_ids)):

@@ -1,3 +1,8 @@
+"""
+download.py
+Download proteins data from the PDB database.
+"""
+
 import argparse
 from crystoper import config
 from crystoper.pdb_db.data_downloader import download_pdbs_data
