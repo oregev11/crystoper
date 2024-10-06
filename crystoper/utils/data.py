@@ -2,9 +2,12 @@ import os
 import json 
 import pandas as pd
 from os.path import isfile, dirname
+import csv
+from tqdm import tqdm
 
 
 ENTITY_SPLIT_CHAR = '_'
+CSV_BATCH_SIZE = 1000
 
 def make_dir(path):
     
@@ -20,7 +23,30 @@ def dump_json(obj, path):
     with open(path, 'w') as f:
         return json.dump(obj, f)
     
+
+
+def write_to_csv_in_batches(data_generator, headers, output_file, batch_size=CSV_BATCH_SIZE, verbose=True):
     
+    buffer = []
+    
+    with open(output_file, mode='w', newline='') as file:
+        
+        writer = csv.writer(file)
+        
+        writer.writerow(headers)
+        
+        if verbose:
+            for row in tqdm(data_generator):
+                buffer.append(row)
+                
+                if len(buffer) >= batch_size:
+                    writer.writerows(buffer)
+                    buffer.clear()  
+        
+        if buffer:
+            writer.writerows(buffer)
+
+
 def filter_pdb_polymer_ids(polymer_ids, relevant_ids):
     """
     Use pandas for fast filtering of large data.
