@@ -16,38 +16,32 @@ ENTRY_FEATURES_NODES_PATHS = {'struct_method': ('exptl', 0, 'method'),
 def pdb_json_parser(entries_folder,
                     poly_entities_folder):
     
-    if entries_folder:
-        parse_entries(entries_folder)
-        
+    if not entries_folder:
+        raise ValueError('entries_folder MUST be passed')
+    
+    if not poly_entities_folder:
+        raise ValueError('poly entities folder MUST be passed')
+    
+    df_entries = parse_entries(entries_folder)
+
+     
 def parse_entries(entries_folder):
     
     query = join(entries_folder, '**', '*.json')
     
-    #define generator
-    def _parse_entries(query):
+    data = []
+    
+    print('Parsing Entries...')
+    
+    for entry_path in tqdm(glob(query, recursive=True)):
         
-        for entry_path in glob(query, recursive=True):
-            
-            entry = load_json(entry_path)
-            pdb_id = Path(entry_path).stem
-            
-            data = [pdb_id] + [get_item(entry, nodes_path) for nodes_path in ENTRY_FEATURES_NODES_PATHS.values()]
-            yield data
-    
-    #csv headers
-    headers = ['pdb_id'] + list(ENTRY_FEATURES_NODES_PATHS.keys())
-    output_file = config.parsed_pdb_entries_path
-    
-    print(f'Starting entries parsing into {output_file}')
-    
-    write_to_csv_in_batches(data_generator=_parse_entries(query),
-                            headers=headers,
-                            output_file=output_file,
-                            batch_size=500,
-                            tqdm_total=len(glob(query)))
-    
-    print(f'Entries parsing into {output_file} is DONE!')
-    
+        pdb_id = Path(entry_path).stem
+        
+        entry = load_json(entry_path)
+        
+        data.append([pdb_id] + [get_item(entry, nodes_path) for nodes_path in ENTRY_FEATURES_NODES_PATHS.values()])
+        
+    return pd.DataFrame(data, headers=['pdb_id'] + list(ENTRY_FEATURES_NODES_PATHS.keys()))
 
 
 def get_item(jsn, nodes_path):
