@@ -25,7 +25,7 @@ def dump_json(obj, path):
     
 
 
-def write_to_csv_in_batches(data_generator, headers, output_file, batch_size=CSV_BATCH_SIZE, verbose=True):
+def write_to_csv_in_batches(data_generator, headers, output_file, batch_size=CSV_BATCH_SIZE, verbose=True, tqdm_total=None):
     
     buffer = []
     
@@ -36,7 +36,7 @@ def write_to_csv_in_batches(data_generator, headers, output_file, batch_size=CSV
         writer.writerow(headers)
         
         if verbose:
-            for row in tqdm(data_generator):
+            for row in tqdm(data_generator, total=tqdm_total):
                 buffer.append(row)
                 
                 if len(buffer) >= batch_size:
