@@ -3,6 +3,7 @@
     "pdb_entries_path": "data/pdb_data/entries",
     "pdb_polymer_entities_list_path": "data/pdb_data/20240927_pdb_polymer_entities.json",
     "pdb_polymer_entities_path": "data/pdb_data/polymer_entities",
-    "parsed_pdbs_path": "data/pdb_data/parsed_data.csv"
+    "parsed_data_path": "data/pdb_data/parsed_data.csv",
+    "processed_data_path": "data/pdb_data/processed_data.csv"
     
 }
