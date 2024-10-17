@@ -92,6 +92,45 @@ class SequencesVectorizer():
         data[SEQUENCES_VEC] = self.get_vectors(data['df'][SEQ_COL].values)
         
         return data
+    
+class DetailsVectorizer():
+    def __init__(self, model, batch_size, data_constructor=ProteinSequences, pooling=None, hidden_fn=None, cpu=False):
+        self.device = 'cpu' if cpu \
+                        else 'cuda' if torch.cuda.is_available() \
+                            else 'cpu'
+        self.model_name = model
+        self.batch_size = batch_size
+        self.data_constructor = data_constructor
+        self.pooling = pooling
+        self.hidden_fn = hidden_fn
+
+
+    def get_model(self):
+        pass
+        # model = EsmForMaskedLM.from_pretrained(self.model_name, output_hidden_states=True)
+        # tokenizer = EsmTokenizer.from_pretrained(self.model_name)
+
+        # return model, tokenizer
+
+    def get_vectors(self, sequences):
+        pass
+        # model, tokenizer = self.get_model()
+        # data = self.data_constructor(sequences, tokenizer, device=self.device)
+        # data_iter = DataLoader(data, batch_size=self.batch_size, collate_fn=data.collate)
+
+        # if VERBOSE:
+        #     print(f'Starting protein sequence extraction! {len(sequences)} sequences in {len(sequences) // self.batch_size} batches...')
+        # seq2vec = Sequence2Vector(model.to(self.device), pooling=self.pooling, hidden_fn=self.hidden_fn)
+        # vectors = seq2vec(data_iter)
+
+        # return vectors
+
+    def __call__(self, data):
+        pass
+        # data[SEQUENCES_MODEL] = self.model_name
+        # data[SEQUENCES_VEC] = self.get_vectors(data['df'][SEQ_COL].values)
+        
+        # return data
 
 
 
