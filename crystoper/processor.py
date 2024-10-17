@@ -6,7 +6,10 @@ from crystoper.utils.data import pack_data
 from crystoper.utils.general import vprint
 from crystoper import config
 
-POLYMER_ENTITIES_COLS = ('pe_index', 'sequence', 'poly_type', ) #columns for poly entities (and not common among other chains of same entry)
+POLYMER_ENTITIES_COLS = ('pe_index', 'sequence', 'poly_type') #columns for poly entities (and not common among other chains of same entry)
+FINAL_COLUMNS_ORDER = ['pdb_id', 'pe_index', 'sequence', 'poly_type', 'struct_method',	'crystal_method', 'ph',
+                       'temp', 'pdbx_details', 'deposit_date',	'revision_date']
+
 VERBOSE = True
 
 def get_entries_df(df):
@@ -31,7 +34,10 @@ def preprocess_pdb_data(input_path, output_path,
     
     print_missing_report(df)
     
-    torch.save(pack_data(df), config.processed_data_path)
+    #reorder    
+    cols = [col for col in FINAL_COLUMNS_ORDER if col in df.columns]
+    df = df[cols]
+    df.to_csv(config.processed_data_path, index=False)
     
 def filter_pdb_data(df,
                     filter_non_proteins,
