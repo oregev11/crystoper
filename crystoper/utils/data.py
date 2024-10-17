@@ -22,7 +22,9 @@ def dump_json(obj, path):
     
     with open(path, 'w') as f:
         return json.dump(obj, f)
-    
+
+def pack_data(df):
+    return {'df': df}
 
 
 def write_to_csv_in_batches(data_generator, headers, output_file, batch_size=CSV_BATCH_SIZE, verbose=True, tqdm_total=None):

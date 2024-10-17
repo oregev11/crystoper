@@ -42,6 +42,9 @@ def main():
     args = parse_args()
     
     preprocess_pdb_data(**vars(args))
+    
+    if config.verbose:
+        print(f'Processed data was saved to {config.processed_data_path}')
 
 if __name__ == "__main__":
     main()
