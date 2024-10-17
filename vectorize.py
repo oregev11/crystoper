@@ -3,6 +3,7 @@ vectorize.py
 Convert sequences to vectors and pack data in a *.pkl file.
 """
 import argparse
+import torch
 from crystoper import config
 from crystoper.vectorizer import SequencesVectorizer
 
@@ -49,9 +50,9 @@ def main():
         if config.verbose:
             print(f'Sequnces embbeded vectors extraciotn using {args.sequences_model} is done!')
             print('Going over to pdbx_details vectors extraction...')
+
     
-    
-    torch.save(data, output_path)
+    torch.save(data, args.data_path)
 
     print('DONE!!!!!!')
 

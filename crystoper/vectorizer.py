@@ -1,15 +1,21 @@
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-# from crystoper.dataset import ProteinSequences
+from crystoper.dataset import ProteinSequences
 
 from transformers import EsmTokenizer, EsmForMaskedLM
 import torch
 from torch.utils.data import DataLoader
 
 SEQ_COL = 'sequence'
-VEC_KEY = 'emb_vec'
-MODEL_KEY = 'emb_model'
+SEQUENCES_VEC = 'seq_vec'
+SEQUENCES_MODEL = 'seq_model'
+
+DETAILS_COL = 'pdbx_details'
+DETAILS_VEC = 'det_vec'
+DETAILS_MODEL = 'det_model'
+
+
 
 VERBOSE = True
 
@@ -81,11 +87,10 @@ class SequencesVectorizer():
         return vectors
 
     def __call__(self, data):
-
-        vectors = self.get_vectors(data['df'][SEQ_COL].values)
-        data[VEC_KEY] = vectors
-        data[MODEL_KEY] = self.model_name
-
+        
+        data[SEQUENCES_MODEL] = self.model_name
+        data[SEQUENCES_VEC] = self.get_vectors(data['df'][SEQ_COL].values)
+        
         return data
 
 
