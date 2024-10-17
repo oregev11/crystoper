@@ -6,8 +6,6 @@ import argparse
 from crystoper import config
 from crystoper.pdb_db.parser import pdb_json_parser
 
-
-
 def parse_args():
     
     parser = argparse.ArgumentParser(description="Parse PDB 'entries' and 'polymer entities' json files.")
@@ -27,7 +25,7 @@ def main():
     args = parse_args()
     
     pdb_json_parser(**vars(args))
-
+    
 if __name__ == "__main__":
     main()
 
