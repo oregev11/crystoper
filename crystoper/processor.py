@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
+import torch
 import re
-
+from crystoper.utils.data import pack_data
+from crystoper import config
 
 POLYMER_ENTITIES_COLS = ('pe_index', 'sequence', 'poly_type', ) #columns for poly entities (and not common among other chains of same entry)
 VERBOSE = True
@@ -29,9 +31,8 @@ def preprocess_pdb_data(input_path, output_path,
     if VERBOSE:
         print_missing_report(df)
     
-    df.to_csv(output_path, index=False)
+    torch.save(pack_data(df), config.processed_data_path)
     
-
 def filter_pdb_data(df,
                     filter_non_proteins,
                     chains_per_entry,
