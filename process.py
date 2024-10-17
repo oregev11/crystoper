@@ -5,6 +5,7 @@ Pre-process the pdb data
 import argparse
 from crystoper import config
 from crystoper.processor import preprocess_pdb_data
+from crystoper.utils.general import vprint
 
 
 
@@ -43,8 +44,7 @@ def main():
     
     preprocess_pdb_data(**vars(args))
     
-    if config.verbose:
-        print(f'Processed data was saved to {config.processed_data_path}')
+    vprint(f'Processed data was saved to {config.processed_data_path}')
 
 if __name__ == "__main__":
     main()

@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 from ..utils.data import load_json, write_to_csv_in_batches
+from ..utils.general import vprint
 from .. import config
 
 #features to extract from each Entry json file
@@ -36,7 +37,7 @@ def pdb_json_parser(entries_folder,
     output_path = config.parsed_pdbs_path
     df.to_csv(output_path, index=False)
     
-    print(f"Parsed PDB data was saved to {output_path}")
+    vprint(f"Parsed PDB data was saved to {output_path}")
      
 def parse_entries(folder):
     
@@ -44,7 +45,7 @@ def parse_entries(folder):
     
     data = []
     
-    print('Parsing Entries...')
+    vprint('Parsing Entries...')
     
     for json_path in tqdm(glob(query, recursive=True)):
         
@@ -63,7 +64,7 @@ def parse_poly_entities(folder):
     
     data = []
     
-    print('Parsing Poly Entities...')
+    vprint('Parsing Poly Entities...')
     
     for json_path in tqdm(glob(query, recursive=True)):
         

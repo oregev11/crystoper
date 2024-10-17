@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 import re
 from crystoper.utils.data import pack_data
+from crystoper.utils.general import vprint
 from crystoper import config
 
 POLYMER_ENTITIES_COLS = ('pe_index', 'sequence', 'poly_type', ) #columns for poly entities (and not common among other chains of same entry)
@@ -28,8 +29,7 @@ def preprocess_pdb_data(input_path, output_path,
     
     df = standardize_crystal_method(df)
     
-    if VERBOSE:
-        print_missing_report(df)
+    print_missing_report(df)
     
     torch.save(pack_data(df), config.processed_data_path)
     
@@ -54,8 +54,7 @@ def filter_pdb_data(df,
     n_entries = len(df_entries) 
     df_entries = df_entries.query('struct_method == "X-RAY DIFFRACTION"')
     
-    if VERBOSE:
-        print(f'{n_entries - len(df_entries)} entries with struct_method != ""X-RAY DIFFRACTION"" were removed!')
+    vprint(f'{n_entries - len(df_entries)} entries with struct_method != ""X-RAY DIFFRACTION"" were removed!')
         
     
     if filter_non_proteins:
@@ -67,8 +66,7 @@ def filter_pdb_data(df,
         
         df_entries = df_entries[df_entries.pdb_id.isin(proteins_only_ids)]
         
-        if VERBOSE:
-            print(f'{n_entries - len(df_entries)} entries with non-protein entities were removed!')
+        vprint(f'{n_entries - len(df_entries)} entries with non-protein entities were removed!')
     
     if chains_per_entry != [0]:
         
@@ -77,8 +75,7 @@ def filter_pdb_data(df,
         
         df_entries = df_entries[df_entries.pdb_id.isin(filtered_ids)]
         
-        if VERBOSE:
-            print(f'{len(filtered_ids)} entries were filtered out due to number of chains (polymer entity) different from user input')
+        vprint(f'{len(filtered_ids)} entries were filtered out due to number of chains (polymer entity) different from user input')
     
     
     if filter_empty_details:
@@ -86,26 +83,23 @@ def filter_pdb_data(df,
         n_entries = len(df_entries)
         df_entries = df_entries.query('pdbx_details.notna()')
         
-        if VERBOSE:
-            print(f'{n_entries - len(df_entries)} entries with no "pdbx_details" were removed!')
+        vprint(f'{n_entries - len(df_entries)} entries with no "pdbx_details" were removed!')
             
     #re-merge data (it will be filtered according to the entries left in df_entries due to left merge)
     df = df_entries.merge(df_pe, how='left')
     
-    if VERBOSE:
-        
-        print("\n\nTotal filtered values:")
-        
-        entries_filtered = original_n_entries - len(df_entries)
-        pe_filtered = original_n_poly_entities - len(df)
-        
-        print(f'{entries_filtered} entries were filtered out of {original_n_entries} ({100*entries_filtered/len(df_entries):.2f}%) ')
-        print(f'{pe_filtered} poly entities were filtered out of {original_n_poly_entities} ({100*pe_filtered/len(df):.2f}%) ')
-        
-        print('\n')
-        print('Final data size:')
-        print(f"Entries: {len(df_entries)}")
-        print(f"Poly entities: {len(df)}")
+    vprint("\n\nTotal filtered values:")
+    
+    entries_filtered = original_n_entries - len(df_entries)
+    pe_filtered = original_n_poly_entities - len(df)
+    
+    vprint(f'{entries_filtered} entries were filtered out of {original_n_entries} ({100*entries_filtered/len(df_entries):.2f}%) ')
+    vprint(f'{pe_filtered} poly entities were filtered out of {original_n_poly_entities} ({100*pe_filtered/len(df):.2f}%) ')
+    
+    vprint('\n')
+    vprint('Final data size:')
+    vprint(f"Entries: {len(df_entries)}")
+    vprint(f"Poly entities: {len(df)}")
         
     return df
 
@@ -119,8 +113,7 @@ def parse_ph_and_temperature(df, parse_ph, parse_temperature, **kwargs):
 
         n = parsed_ph.notna().sum()
          
-        if VERBOSE:
-            print(f'{parsed_ph.notna().sum()} missing pH values were parsed from the "pdbx_details" feature')
+        vprint(f'{parsed_ph.notna().sum()} missing pH values were parsed from the "pdbx_details" feature')
         
     if parse_temperature:
         
@@ -128,8 +121,7 @@ def parse_ph_and_temperature(df, parse_ph, parse_temperature, **kwargs):
         parsed_temp = df.loc[m, 'pdbx_details'].apply(parse_temp_from_string)
         df.loc[m, 'temp'] = parsed_temp
 
-        if VERBOSE:
-            print(f'{parsed_temp.notna().sum()} missing temperature values were parsed from the "pdbx_details" feature')
+        vprint(f'{parsed_temp.notna().sum()} missing temperature values were parsed from the "pdbx_details" feature')
             
     return df
                 
@@ -138,9 +130,9 @@ def parse_ph_and_temperature(df, parse_ph, parse_temperature, **kwargs):
 
 def print_missing_report(df):
     
-    print('')
-    print('*'*50)
-    print("** Missing values report for the full data (poly entities data): **")
+    vprint('')
+    vprint('*'*50)
+    vprint("** Missing values report for the full data (poly entities data): **")
     
     n = len(df)
 
@@ -149,7 +141,7 @@ def print_missing_report(df):
     df['total'] = n
     df['pct_missing'] = (100 * df.missing / df.total).round(2).astype(str) + '%'
     
-    print(df.to_string())    
+    vprint(df.to_string())    
 
 def parse_ph_from_string(s):
     s = s.lower()
