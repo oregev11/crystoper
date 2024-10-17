@@ -7,6 +7,7 @@ import torch
 from crystoper import config
 from crystoper.utils.general import vprint
 from crystoper.vectorizer import SequencesVectorizer
+from crystoper.utils.data import Data
 
 
 
@@ -51,7 +52,8 @@ def main():
     
     if args.extract_sequences_vectors:
 
-        data = torch.load(args.data_path)
+        data = Data(args.data_path)
+        df = torch.load(args.data_path)
         
         vec = SequencesVectorizer(model=args.sequences_model,
                                   batch_size = args.sequences_batch_size,
