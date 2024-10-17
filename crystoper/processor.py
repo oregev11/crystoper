@@ -1,25 +1,42 @@
+import numpy as np
 import pandas as pd
+import re
+
 
 POLYMER_ENTITIES_COLS = ('pe_index', 'sequence', 'poly_type', ) #columns for poly entities (and not common among other chains of same entry)
 VERBOSE = True
 
+def get_entries_df(df):
+    "Get entries from the full data poly entities data"
+    
+    cols = list(df.columns)
+    cols = [col for col in cols if col not in POLYMER_ENTITIES_COLS]
+    df_entries = df[cols].drop_duplicates() 
+    
+    return df_entries
+
 def preprocess_pdb_data(input_path, output_path,
-                        filter_non_proteins,
-                        chains_per_entry,
-                        filter_empty_details,
-                        parse_ph,
-                        parse_temperature):
+                        **kwargs):
 
     df = pd.read_csv(input_path)
     
-    df = filter_pdb_data(df)
+    df = filter_pdb_data(df, **kwargs)
+    
+    df = parse_ph_and_temperature(df, **kwargs)
     
     df = standardize_crystal_method(df)
     
-    df_to_csv(output_path, index=False)
+    if VERBOSE:
+        print_missing_report(df)
+    
+    df.to_csv(output_path, index=False)
     
 
-def filter_pdb_data(df):
+def filter_pdb_data(df,
+                    filter_non_proteins,
+                    chains_per_entry,
+                    filter_empty_details,
+                    **kwargs):
 
     #save original lengths for later printings
     original_n_entries = len(set(df.pdb_id))
@@ -29,9 +46,7 @@ def filter_pdb_data(df):
     df_pe = df[['pdb_id'] + list(POLYMER_ENTITIES_COLS)]
     
     #we will get a df of entries alone by leaving only entry-derived columns and dropping duplicates
-    cols = list(df.columns)
-    cols = [col for col in cols if col not in POL]
-    df_entries = df[cols].drop_duplicates() 
+    df_entries = get_entries_df(df)
     
     #filter non X-ray data
     
@@ -59,7 +74,7 @@ def filter_pdb_data(df):
         s = df_pe.groupby('pdb_id').size()
         filtered_ids = set(s[s.isin(chains_per_entry)].index)
         
-        df_entries = df_entries[df_entries.pdb_id.isin(singles_ids)]
+        df_entries = df_entries[df_entries.pdb_id.isin(filtered_ids)]
         
         if VERBOSE:
             print(f'{len(filtered_ids)} entries were filtered out due to number of chains (polymer entity) different from user input')
@@ -71,59 +86,67 @@ def filter_pdb_data(df):
         df_entries = df_entries.query('pdbx_details.notna()')
         
         if VERBOSE:
-            print(f'{n_pe - len(df_pe)} entries with no "pdbx_details" were removed!')
-        
-    
-    if parse_ph:
-        
-        n_entries = len(df_entries)
-        
-        m = df_entries.ph.isna()
-        parsed_ph = df_entries.loc[m, 'pdbx_details'].apply(parse_ph_from_string)
-        df_entries.loc[m, 'ph'] = parsed_ph
-
-        n = parsed_ph.notna().sum()
-         
-        if VERBOSE:
-            print(f'{parse_ph.notna().sum()} missing pH values were parsed from the "pdbx_details" feature')
-        
-    if parse_temperature:
-        n_entries = len(df_entries)
-        
-        m = df_entries.temp.isna()
-        parsed_temp = df_entries.loc[m, 'pdbx_details'].apply(parse_temp_from_string)
-        df_entries.loc[m, 'temp'] = parsed_temp
-
-        n = parsed_temp.notna().sum()
-         
-        if VERBOSE:
-            print(f'{parse_temp.notna().sum()} missing temperature values were parsed from the "pdbx_details" feature')
-                
-    
-    if VERBOSE:
-        print_missing_report()
-        
+            print(f'{n_entries - len(df_entries)} entries with no "pdbx_details" were removed!')
+            
     #re-merge data (it will be filtered according to the entries left in df_entries due to left merge)
     df = df_entries.merge(df_pe, how='left')
     
     if VERBOSE:
+        
+        print("\n\nTotal filtered values:")
+        
         entries_filtered = original_n_entries - len(df_entries)
         pe_filtered = original_n_poly_entities - len(df)
         
-        print(f'{entries_filtered} entries were filtered out of {original_n_entries} ({100*entries_filtered/len(df_entries):.2}%) ')
-        print(f'{pe_filtered} poly entities were filtered out of {original_n_poly_entities} ({100*pe_filtered/len(df):.2}%) ')
-
+        print(f'{entries_filtered} entries were filtered out of {original_n_entries} ({100*entries_filtered/len(df_entries):.2f}%) ')
+        print(f'{pe_filtered} poly entities were filtered out of {original_n_poly_entities} ({100*pe_filtered/len(df):.2f}%) ')
+        
+        print('\n')
+        print('Final data size:')
+        print(f"Entries: {len(df_entries)}")
+        print(f"Poly entities: {len(df)}")
+        
     return df
+
+def parse_ph_and_temperature(df, parse_ph, parse_temperature, **kwargs):
+    
+    if parse_ph:
+        
+        m = df.ph.isna()
+        parsed_ph = df.loc[m, 'pdbx_details'].apply(parse_ph_from_string)
+        df.loc[m, 'ph'] = parsed_ph
+
+        n = parsed_ph.notna().sum()
+         
+        if VERBOSE:
+            print(f'{parsed_ph.notna().sum()} missing pH values were parsed from the "pdbx_details" feature')
+        
+    if parse_temperature:
+        
+        m = df.temp.isna()
+        parsed_temp = df.loc[m, 'pdbx_details'].apply(parse_temp_from_string)
+        df.loc[m, 'temp'] = parsed_temp
+
+        if VERBOSE:
+            print(f'{parsed_temp.notna().sum()} missing temperature values were parsed from the "pdbx_details" feature')
+            
+    return df
+                
+
 
 
 def print_missing_report(df):
     
-    print("** Missing values report for the data: **")
-        
+    print('')
+    print('*'*50)
+    print("** Missing values report for the full data (poly entities data): **")
+    
+    n = len(df)
+
     df = df.isna().sum().to_frame()
     df.columns = ['missing']
-    df['total'] = len(df_entries)
-    df['pct_missing'] = (100 * df.missing / df.total).round(2)
+    df['total'] = n
+    df['pct_missing'] = (100 * df.missing / df.total).round(2).astype(str) + '%'
     
     print(df.to_string())    
 
