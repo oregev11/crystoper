@@ -4,7 +4,7 @@ Pre-process the pdb data
 """
 import argparse
 from crystoper import config
-from crystoper.preprocessor import preprocess_pdb_data
+from crystoper.preprocessor import process_pdb_data
 
 
 
@@ -41,7 +41,7 @@ def main():
 
     args = parse_args()
     
-    preprocess_pdb_data(**vars(args))
+    process_pdb_data(**vars(args))
 
 if __name__ == "__main__":
     main()
