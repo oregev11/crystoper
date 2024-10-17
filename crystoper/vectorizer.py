@@ -49,7 +49,7 @@ class Sequence2Vector():
         return results
 
 class SequencesVectorizer():
-    def __init__(self, cpu, model, batch_size, data_constructor=ProteinSequences, pooling=None, hidden_fn=None, **kwargs):
+    def __init__(self, model, batch_size, data_constructor=ProteinSequences, pooling=None, hidden_fn=None, cpu=False):
         self.device = 'cpu' if cpu \
                         else 'cuda' if torch.cuda.is_available() \
                             else 'cpu'

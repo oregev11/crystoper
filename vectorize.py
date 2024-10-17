@@ -14,11 +14,17 @@ def parse_args():
     
     parser.add_argument('-i', '--data-path', type=str, default=config.pdb_entries_path,
                         help='Path to csv with a "sequence""')
-    parser.add_argument('-s', '--sequence-col', type=str, default='sequence',
-                        help='Sequence column in the csv')
     
-    
-    
+    parser.add_argument('-s', '--extract-sequences-vectors', action='store_true',
+                        help='flag for extracting the sequences embedded vectors')
+    parser.add_argument('-sm', '--sequences-model', type=str, default='facebook/esm2_t33_650M_UR50D',
+                        help='flag for extracting the sequences embedded vectors')
+    parser.add_argument('-sb', '--sequences-batch-size', type=int, default=16,
+                        help='batch size for extracting the sequences embedded vectors')
+    parser.add_argument('-sp', '--sequences-pooling', type=str, default='average',
+                        help='pooling method for extracting the sequences embedded vectors')
+    parser.add_argument('--cpu', action='store_true',
+                        help='Force cpu usage')
     
     
     args = parser.parse_args()
@@ -30,6 +36,25 @@ def main():
 
     args = parse_args()
     
+    if args.extract_sequences_vectors:
+
+        data = torch.load(args.data_path)
+        
+        vec = SequencesVectorizer(model=args.sequences_model,
+                                  batch_size = args.sequences_batch_size,
+                                  pooling=args.sequences_pooling)
+
+        data = vec(data)
+        
+        if config.verbose:
+            print(f'Sequnces embbeded vectors extraciotn using {args.sequences_model} is done!')
+            print('Going over to pdbx_details vectors extraction...')
+    
+    
+    torch.save(data, output_path)
+
+    print('DONE!!!!!!')
+
     
 
 if __name__ == "__main__":
