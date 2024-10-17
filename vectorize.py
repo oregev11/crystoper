@@ -4,7 +4,7 @@ Convert sequences to vectors and pack data in a *.pkl file.
 """
 import argparse
 from crystoper import config
-from crystoper.pdb_db.parser import pdb_json_parser
+from crystoper.vectorizer import SequencesVectorizer
 
 
 
@@ -16,6 +16,11 @@ def parse_args():
                         help='Path to csv with a "sequence""')
     parser.add_argument('-s', '--sequence-col', type=str, default='sequence',
                         help='Sequence column in the csv')
+    
+    
+    
+    
+    
     args = parser.parse_args()
     
     return args
@@ -25,7 +30,7 @@ def main():
 
     args = parse_args()
     
-    pdb_json_parser(**vars(args))
+    
 
 if __name__ == "__main__":
     main()
