@@ -37,7 +37,8 @@ def preprocess_pdb_data(input_path, output_path,
     #reorder    
     cols = [col for col in FINAL_COLUMNS_ORDER if col in df.columns]
     df = df[cols]
-    df.to_csv(config.processed_data_path, index=False)
+    
+    return df
     
 def filter_pdb_data(df,
                     filter_non_proteins,

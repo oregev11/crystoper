@@ -42,7 +42,9 @@ def main():
 
     args = parse_args()
     
-    preprocess_pdb_data(**vars(args))
+    df = preprocess_pdb_data(**vars(args))
+    
+    df.to_csv(config.processed_data_path, index=False)
     
     vprint(f'Processed data was saved to {config.processed_data_path}')
 
