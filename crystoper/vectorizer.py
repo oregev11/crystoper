@@ -15,6 +15,7 @@ DETAILS_COL = 'pdbx_details'
 DETAILS_VEC = 'det_vec'
 DETAILS_MODEL = 'det_model'
 
+CHECKPOINTS = {'esm2': 'facebook/esm2_t33_650M_UR50D'}
 
 
 VERBOSE = True
@@ -59,7 +60,7 @@ class SequencesVectorizer():
         self.device = 'cpu' if cpu \
                         else 'cuda' if torch.cuda.is_available() \
                             else 'cpu'
-        self.model_name = model
+        self.model_name = CHECKPOINTS[model]
         self.batch_size = batch_size
         self.data_constructor = data_constructor
         self.pooling = pooling
@@ -86,12 +87,10 @@ class SequencesVectorizer():
 
         return vectors
 
-    def __call__(self, data):
+    def __call__(self, sequences):
         
-        data[SEQUENCES_MODEL] = self.model_name
-        data[SEQUENCES_VEC] = self.get_vectors(data['df'][SEQ_COL].values)
+        return self.get_vectors(sequences.values)
         
-        return data
     
 class DetailsVectorizer():
     def __init__(self, model, batch_size, data_constructor=ProteinSequences, pooling=None, hidden_fn=None, cpu=False):

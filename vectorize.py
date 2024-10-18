@@ -4,10 +4,11 @@ Convert sequences to vectors and pack data in a *.pkl file.
 """
 import argparse
 import torch
+import pandas as pd
 from crystoper import config
 from crystoper.utils.general import vprint
 from crystoper.vectorizer import SequencesVectorizer
-from crystoper.utils.data import Data
+from crystoper.utils.data import dump_vectors
 
 
 
@@ -20,7 +21,7 @@ def parse_args():
     #sequence-related args
     parser.add_argument('-s', '--extract-sequences-vectors', action='store_true',
                         help='flag for extracting the sequences embedded vectors')
-    parser.add_argument('-sm', '--sequences-model', type=str, default='facebook/esm2_t33_650M_UR50D',
+    parser.add_argument('-sm', '--sequences-model', type=str, default='esm2',
                         help='checkpoint to use for extracting the sequences embedded vectors')
     parser.add_argument('-sb', '--sequences-batch-size', type=int, default=16,
                         help='batch size for extracting the sequences embedded vectors')
@@ -52,37 +53,37 @@ def main():
     
     if args.extract_sequences_vectors:
 
-        data = Data(args.data_path)
-        df = torch.load(args.data_path)
+        sequences = pd.read_csv(config.processed_data_path)['sequence'][:3]
         
         vec = SequencesVectorizer(model=args.sequences_model,
                                   batch_size = args.sequences_batch_size,
                                   pooling=args.sequences_pooling)
 
-        data = vec(data)
+        vectors = vec(sequences)
         
-        vprint(f'Sequnces embbeded vectors extraciotn using {args.sequences_model} is done!')
+        dump_vectors(vectors, args.sequences_model, 'sequences')
+        
+        vprint(f'Sequences embedded vectors extraction using {args.sequences_model} is done!')
         vprint('Going over to pdbx_details vectors extraction...')
-    
+
+        del vectors
+        
     if args.extract_details_vectors:
-
-        data = torch.load(args.data_path)
+        pass
+        # details = pd.read_csv(config.processed_data_path)
         
-        vec = SequencesVectorizer(model=args.sequences_model,
-                                  batch_size = args.sequences_batch_size,
-                                  pooling=args.sequences_pooling)
+        # vec = SequencesVectorizer(model=args.sequences_model,
+        #                           batch_size = args.sequences_batch_size,
+        #                           pooling=args.sequences_pooling)
 
-        data = vec(data)
+        # vectors = vec(data)
         
-        vprint(f'Sequnces embbeded vectors extraciotn using {args.sequences_model} is done!')
-        vprint('Going over to pdbx_details vectors extraction...')
+        # dump_vectors(vectors, args.sequences_model, 'sequences')
+        
+        # vprint(f'Sequnces embbeded vectors extraciotn using {args.sequences_model} is done!')
+        # vprint('Going over to pdbx_details vectors extraction...')
 
     
-    torch.save(data, args.data_path)
-
-
-    
-
 if __name__ == "__main__":
     main()
 

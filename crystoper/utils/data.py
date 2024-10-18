@@ -3,15 +3,16 @@ import json
 import numpy as np
 import pandas as pd
 from os.path import isfile, dirname, join
+from pathlib import Path
 import csv
 from tqdm import tqdm
- 
+from .. import config
+
 ENTITY_SPLIT_CHAR = '_'
 CSV_BATCH_SIZE = 1000
 VEC_SUFFIX = '.npy'
 
 def make_dir(path):
-    
     if not os.path.exists(path):
         os.makedirs(path)
         
@@ -24,46 +25,46 @@ def dump_json(obj, path):
     with open(path, 'w') as f:
         return json.dump(obj, f)
 
-class Data():
-    """Class for handling crystoper data
+# class Data():
+#     """Class for handling crystoper data
     
-    ARGS:
-        df_path(str): path to dataframe with processed pdb data
-        seq_vec_path(str): path to vectors numpy file with 'sequences' embedded vectors
-        det_vec_path(str): path to vectors numpy file with 'pdbx_details' embedded vectors
-    """
-    def __init__(self,
-                 df_path=None,
-                 seq_model=None,
-                 det_model=None):
+#     ARGS:
+#         df_path(str): path to dataframe with processed pdb data
+#         seq_vec_path(str): path to vectors numpy file with 'sequences' embedded vectors
+#         det_vec_path(str): path to vectors numpy file with 'pdbx_details' embedded vectors
+#     """
+#     def __init__(self,
+#                  df_path=None,
+#                  seq_model=None,
+#                  det_model=None):
                 
-        self.df_path = df_path
-        self.seq_vec_path = seq_vec_path
-        self.det_vec_path = det_vec_path
+#         self.df_path = df_path
+#         self.seq_vec_path = seq_vec_path
+#         self.det_vec_path = det_vec_path
         
-        self.seq_model = seq_model
-        self.det_model = det_model
+#         self.seq_model = seq_model
+#         self.det_model = det_model
         
-        self.df = None
-        self.seq_vec = None
-        self.det_vec = None
+#         self.df = None
+#         self.seq_vec = None
+#         self.det_vec = None
         
         
     
-    def load(self):
-        if self.df_path:
-            self.df = pd.read_csv(self.df_path)
-        if self.seq_model:
-            path = get_vectors_path(self.seq_model, 'sequences')
-            self.seq_vec = load_vectors()
-        if self.det_model:
-            path = get_vectors_path(self.det_model, 'details')
-            self.det_vec = load_vectors()
+#     def load(self):
+#         if self.df_path:
+#             self.df = pd.read_csv(self.df_path)
+#         if self.seq_model:
+#             path = get_vectors_path(self.seq_model, 'sequences')
+#             self.seq_vec = load_vectors()
+#         if self.det_model:
+#             path = get_vectors_path(self.det_model, 'details')
+#             self.det_vec = load_vectors()
             
             
 
-def pack_data(df):
-    return {'df': df}
+# def pack_data(df):
+#     return {'df': df}
 
 def load_vectors(model_name, model_type):
     path = get_vectors_path(model_type, model_name)
@@ -71,13 +72,13 @@ def load_vectors(model_name, model_type):
     
     return np.load(path)
 
-def dump_vectors(data, model_name, model_type):
-    path = get_vectors_path(model_type, model_name)
-    path = os.join(path, model_name)  + VEC_SUFFIX
+def dump_vectors(vectors, model_name, model_type):
+    path = get_vectors_path(model_name, model_type)
+    path = join(path, model_name)  + VEC_SUFFIX
     
     make_dir(str(Path(path).parent))
     
-    np.save(path, data)
+    np.save(path, vectors)
 
 def get_vectors_path(model_name, model_type):
     if model_type == 'sequences':
@@ -86,6 +87,8 @@ def get_vectors_path(model_name, model_type):
         path = config.details_vectors_path
     else:
         raise ValueError('Model type path is undefined!')
+    
+    return path
 
 
 
