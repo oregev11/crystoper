@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import torch
 import re
-from crystoper.utils.data import pack_data
 from crystoper.utils.general import vprint
 from crystoper import config
 
@@ -180,6 +179,9 @@ def process_crystal_method(v):
     if not v:
         v = ''
     
+    if v == '':
+       return 'SITTING-DROP'
+    
     v = v.lower()
     
     if 'evaporation' in v:
@@ -191,13 +193,13 @@ def process_crystal_method(v):
     if 'tubes' in v:
         return 'SMALL-TUBES'
     
-    if 'batch' in v:
+    if 'batch' in v or 'bath' in v or 'microbach' in v:
         return 'BATCH'
     
     if 'seed' in v:
         return 'SEEDING'
     
-    if 'cubic' or 'lcp' in v:
+    if 'cubic' in v or 'lcp' in v:
         return 'LCP'
     
     if 'dial' in v:
@@ -209,11 +211,24 @@ def process_crystal_method(v):
     if 'sit' in v:
         return 'SITTING-DROP'
     
-    #if vapor exists but now 'sitting' we assume sitting drop
+    if 'liquid' in v:
+        return 'LIQUID-DIFFUSION'
+    
+    if 'counter' in v:
+        return 'COUNTER-DIFFUSION'
+    
+    if 'oil' in v:
+        return 'UNDER-OIL'
+    
+    if 'slow cool' in v:
+        return 'SLOW-COOL'
+    
+    #if vapor exists but not 'sitting' we assume sitting drop
     if 'vapor' in v:
         return 'SITTING-DROP'
     
     else:
+        print(v)
         return np.nan
     
 def standardize_crystal_method(df):
