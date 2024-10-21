@@ -3,7 +3,7 @@ import pandas as pd
 from tqdm import tqdm
 from crystoper.dataset import ProteinSequences
 
-from transformers import EsmTokenizer, EsmForMaskedLM
+from transformers import EsmTokenizer, EsmForMaskedLM, GPT2Tokenizer, GPT2Model
 import torch
 from torch.utils.data import DataLoader
 
@@ -15,7 +15,8 @@ DETAILS_COL = 'pdbx_details'
 DETAILS_VEC = 'det_vec'
 DETAILS_MODEL = 'det_model'
 
-CHECKPOINTS = {'esm2': 'facebook/esm2_t33_650M_UR50D'}
+CHECKPOINTS = {'esm2': 'facebook/esm2_t33_650M_UR50D',
+               'gpt2': 'gpt2'}
 
 
 VERBOSE = True
@@ -97,39 +98,32 @@ class DetailsVectorizer():
         self.device = 'cpu' if cpu \
                         else 'cuda' if torch.cuda.is_available() \
                             else 'cpu'
-        self.model_name = model
+        self.model_name = CHECKPOINTS[model]
         self.batch_size = batch_size
         self.data_constructor = data_constructor
         self.pooling = pooling
-        self.hidden_fn = hidden_fn
 
 
     def get_model(self):
-        pass
-        # model = EsmForMaskedLM.from_pretrained(self.model_name, output_hidden_states=True)
-        # tokenizer = EsmTokenizer.from_pretrained(self.model_name)
+        model = GPT2Tokenizer.from_pretrained(self.model_name)
+        tokenizer = GPT2Model.from_pretrained(self.rgs.model_name)
 
         # return model, tokenizer
 
     def get_vectors(self, sequences):
-        pass
-        # model, tokenizer = self.get_model()
-        # data = self.data_constructor(sequences, tokenizer, device=self.device)
-        # data_iter = DataLoader(data, batch_size=self.batch_size, collate_fn=data.collate)
+        
+        model, tokenizer = self.get_model()
+        data = self.data_constructor(sequences, tokenizer, device=self.device)
+        data_iter = DataLoader(data, batch_size=self.batch_size, collate_fn=data.collate)
 
-        # if VERBOSE:
-        #     print(f'Starting protein sequence extraction! {len(sequences)} sequences in {len(sequences) // self.batch_size} batches...')
-        # seq2vec = Sequence2Vector(model.to(self.device), pooling=self.pooling, hidden_fn=self.hidden_fn)
-        # vectors = seq2vec(data_iter)
+        if VERBOSE:
+            print(f'Starting sentences embedding extraction! {len(sequences)} sequences in {len(sequences) // self.batch_size} batches...')
+        seq2vec = Sequence2Vector(model.to(self.device), pooling=self.pooling, hidden_fn=self.hidden_fn)
+        vectors = seq2vec(data_iter)
 
         # return vectors
 
-    def __call__(self, data):
-        pass
-        # data[SEQUENCES_MODEL] = self.model_name
-        # data[SEQUENCES_VEC] = self.get_vectors(data['df'][SEQ_COL].values)
-        
-        # return data
-
+    def __call__(self, sentences):
+        return self.get_vectors(sentences)
 
 

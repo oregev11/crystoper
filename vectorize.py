@@ -7,7 +7,7 @@ import torch
 import pandas as pd
 from crystoper import config
 from crystoper.utils.general import vprint
-from crystoper.vectorizer import SequencesVectorizer
+from crystoper.vectorizer import SequencesVectorizer, DetailsVectorizer
 from crystoper.utils.data import dump_vectors
 
 
@@ -33,7 +33,7 @@ def parse_args():
                         help='flag for extracting the pdbx_details embedded vectors')
     parser.add_argument('-dm', '--details-model', type=str, default='gpt',
                         help='checkpoint to use for extracting the pdbx details embedded vectors')
-    parser.add_argument('-db', '--details-batch-size', type=int, default=16,
+    parser.add_argument('-db', '--details-batch-size', type=int, default=8,
                         help='batch size for extracting the pdbx details embedded vectors')
     parser.add_argument('-dp', '--details-pooling', type=str, default='average',
                         help='pooling method for extracting the pdbx details embedded vectors')
@@ -69,14 +69,14 @@ def main():
         del vectors
         
     if args.extract_details_vectors:
-        pass
-        # details = pd.read_csv(config.processed_data_path)
         
-        # vec = SequencesVectorizer(model=args.sequences_model,
-        #                           batch_size = args.sequences_batch_size,
-        #                           pooling=args.sequences_pooling)
+        details = pd.read_csv(config.processed_data_path)
+        
+        vec = DetailsVectorizer(model=args.details_model,
+                                   batch_size = args.sequences_batch_size,
+                                   pooling=args.sequences_pooling)
 
-        # vectors = vec(data)
+        vectors = vec(data)
         
         # dump_vectors(vectors, args.sequences_model, 'sequences')
         
