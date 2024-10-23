@@ -17,7 +17,7 @@ DETAILS_VEC = 'det_vec'
 DETAILS_MODEL = 'det_model'
 
 CHECKPOINTS = {'esm2': 'facebook/esm2_t33_650M_UR50D',
-               'brat': 'facebook/bart-large'}
+               'bart': 'facebook/bart-large'}
 
 
 VERBOSE = True
@@ -63,7 +63,13 @@ class SequencesVectorizer():
         self.device = 'cpu' if cpu \
                         else 'cuda' if torch.cuda.is_available() \
                             else 'cpu'
-        self.model_name = CHECKPOINTS[model]
+        
+        #get model name from a list of supported models
+        if CHECKPOINTS.get(model):
+            self.model_name = CHECKPOINTS[model]
+        else:
+            raise ValueError(f'The selected model {model} is not supported!')
+            
         self.batch_size = batch_size
         self.data_constructor = data_constructor
         self.pooling = pooling
@@ -71,10 +77,9 @@ class SequencesVectorizer():
 
 
     def get_model(self):
-
-        model = EsmForMaskedLM.from_pretrained(self.model_name, output_hidden_states=True)
-        tokenizer = EsmTokenizer.from_pretrained(self.model_name)
-        
+        if 'esm2' in self.model_name:
+            model = EsmForMaskedLM.from_pretrained(self.model_name, output_hidden_states=True)
+            tokenizer = EsmTokenizer.from_pretrained(self.model_name)
 
         return model, tokenizer
 
@@ -138,15 +143,23 @@ class DetailsVectorizer():
         self.device = 'cpu' if cpu \
                         else 'cuda' if torch.cuda.is_available() \
                             else 'cpu'
-        self.model_name = CHECKPOINTS[model]
+
+        #get model name from a list of supported models
+        if CHECKPOINTS.get(model):
+            self.model_name = CHECKPOINTS[model]
+        else:
+            raise ValueError(f'The selected model {model} is not supported!')
+        
         self.batch_size = batch_size
         self.data_constructor = data_constructor
         self.pooling = pooling
 
 
     def get_model(self):
-        model = BartModel.from_pretrained(self.model_name)
-        tokenizer = BartTokenizer.from_pretrained(self.model_name)
+        if 'bart' in self.model_name:
+            model = BartModel.from_pretrained(self.model_name)
+            tokenizer = BartTokenizer.from_pretrained(self.model_name)
+            
         
         return model, tokenizer
 

@@ -31,7 +31,7 @@ def parse_args():
     #pdbx_details-related args
     parser.add_argument('-d', '--extract-details-vectors', action='store_true',
                         help='flag for extracting the pdbx_details embedded vectors')
-    parser.add_argument('-dm', '--details-model', type=str, default='brat',
+    parser.add_argument('-dm', '--details-model', type=str, default='bart',
                         help='checkpoint to use for extracting the pdbx details embedded vectors')
     parser.add_argument('-db', '--details-batch-size', type=int, default=8,
                         help='batch size for extracting the pdbx details embedded vectors')
@@ -78,9 +78,10 @@ def main():
 
         vectors = vec(details)
         
-        dump_vectors(vectors, args.details_model, 'details')
+        saved_path = dump_vectors(vectors, args.details_model, 'details')
         
-        vprint(f'Pdbx details embedded vectors extraction using {args.details_model} is done!')
+        vprint(f'Pdbx details embedded vectors extraction using {args.details_model} is done!. Vectors were saved to {saved_path}')
+        
         
     
 if __name__ == "__main__":
