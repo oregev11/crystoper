@@ -31,7 +31,7 @@ def parse_args():
     #pdbx_details-related args
     parser.add_argument('-d', '--extract-details-vectors', action='store_true',
                         help='flag for extracting the pdbx_details embedded vectors')
-    parser.add_argument('-dm', '--details-model', type=str, default='gpt',
+    parser.add_argument('-dm', '--details-model', type=str, default='brat',
                         help='checkpoint to use for extracting the pdbx details embedded vectors')
     parser.add_argument('-db', '--details-batch-size', type=int, default=8,
                         help='batch size for extracting the pdbx details embedded vectors')
@@ -53,7 +53,7 @@ def main():
     
     if args.extract_sequences_vectors:
 
-        sequences = pd.read_csv(config.processed_data_path)['sequence'][:3]
+        sequences = pd.read_csv(args.data_path)['sequence']
         
         vec = SequencesVectorizer(model=args.sequences_model,
                                   batch_size = args.sequences_batch_size,
@@ -70,19 +70,18 @@ def main():
         
     if args.extract_details_vectors:
         
-        details = pd.read_csv(config.processed_data_path)
+        details = pd.read_csv(args.data_path)['pdbx_details']
         
         vec = DetailsVectorizer(model=args.details_model,
-                                   batch_size = args.sequences_batch_size,
-                                   pooling=args.sequences_pooling)
+                                batch_size = args.sequences_batch_size,
+                                pooling=args.sequences_pooling)
 
-        vectors = vec(data)
+        vectors = vec(details)
         
-        # dump_vectors(vectors, args.sequences_model, 'sequences')
+        dump_vectors(vectors, args.sequences_model, 'details')
         
-        # vprint(f'Sequnces embbeded vectors extraciotn using {args.sequences_model} is done!')
-        # vprint('Going over to pdbx_details vectors extraction...')
-
+        vprint(f'Pdbx details embedded vectors extraction using {args.details_model} is done!')
+        
     
 if __name__ == "__main__":
     main()
