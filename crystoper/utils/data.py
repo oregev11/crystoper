@@ -79,6 +79,8 @@ def dump_vectors(vectors, model_name, model_type):
     make_dir(str(Path(path).parent))
     
     np.save(path, vectors)
+    
+    return path
 
 def get_vectors_path(model_name, model_type):
     if model_type == 'sequences':
