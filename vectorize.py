@@ -78,7 +78,7 @@ def main():
 
         vectors = vec(details)
         
-        dump_vectors(vectors, args.sequences_model, 'details')
+        dump_vectors(vectors, args.details_model, 'details')
         
         vprint(f'Pdbx details embedded vectors extraction using {args.details_model} is done!')
         
