@@ -1,4 +1,4 @@
-# crystoper - Crystallization conditions Predictor  
+# crystoper - Crystallization Conditions Predictor  
 
 # Datasets
 Data was taken from PDB (Protein Data Bank, https://www.rcsb.org/).
