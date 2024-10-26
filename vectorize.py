@@ -35,7 +35,7 @@ def parse_args():
                         help='checkpoint to use for extracting the pdbx details embedded vectors')
     parser.add_argument('-db', '--details-batch-size', type=int, default=8,
                         help='batch size for extracting the pdbx details embedded vectors')
-    parser.add_argument('-dp', '--details-pooling', type=str, default='average',
+    parser.add_argument('-dp', '--details-pooling', type=str, default=None,
                         help='pooling method for extracting the pdbx details embedded vectors')
     
     parser.add_argument('--cpu', action='store_true',
