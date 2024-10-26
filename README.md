@@ -1,4 +1,6 @@
 # crystoper - Crystallization Conditions Predictor  
+crystoper is a tool for predicting diffracting crystalization conditions for proteins based on their sequence.
+Current version 
 
 # Datasets
 Data was taken from PDB (Protein Data Bank, https://www.rcsb.org/).
