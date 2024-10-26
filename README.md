@@ -17,7 +17,7 @@ data will be saved in data/pdb_data.
 data will be saved to `data/pdb_data/parsed_data.csv`.
 3. Preprocess data and pack it as pickle using `$ python process.py`. 
 data will be saved to `data/pdb_data/processed_data.csv`.
-4. Extract sequences & pdbx_details vectors using `$ python vectorize.py -s -d`.
+4. Extract sequences vectors using `$ python vectorize.py -s`.
 
 
 
