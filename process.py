@@ -4,7 +4,8 @@ Pre-process the pdb data
 """
 import argparse
 from crystoper import config
-from crystoper.preprocessor import preprocess_pdb_data
+from crystoper.processor import preprocess_pdb_data
+from crystoper.utils.general import vprint
 
 
 
@@ -12,13 +13,13 @@ def parse_args():
     
     parser = argparse.ArgumentParser(description="Parse PDB 'entries' and 'polymer entities' json files.")
     
-    parser.add_argument('-i', '--input-path', type=str, default=config.parsed_pdbs_path,
+    parser.add_argument('-i', '--input-path', type=str, default=config.parsed_data_path,
                         help='Path to the parsed data csv file')
     parser.add_argument('-o', '--output-path', type=str, default=config.processed_data_path,
                         help='output path (csv)')
     parser.add_argument('-fnp', '--filter-non-proteins', default=True,
                         help='filter out entries that include poly entities (chains) that are not proteins. (All the entry will be removed)')
-    parser.add_argument('-c', '--chains-per-entry', type=int, default=[1], nargs='+',
+    parser.add_argument('-c', '--chains-per-entry', type=int, default=[0], nargs='+',
                         help='maximal number of chains (polymer entities) per PDB id. PDB ids (entries)\
                             with larger number of chains will be removed. default is [1]. if [0] no filtration will be done')
     parser.add_argument('-fed', '--filter-empty-details',  default=True,
@@ -41,7 +42,11 @@ def main():
 
     args = parse_args()
     
-    preprocess_pdb_data(**vars(args))
+    df = preprocess_pdb_data(**vars(args))
+    
+    df.to_csv(config.processed_data_path, index=False)
+    
+    vprint(f'Processed data was saved to {config.processed_data_path}')
 
 if __name__ == "__main__":
     main()
