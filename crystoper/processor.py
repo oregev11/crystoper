@@ -236,3 +236,14 @@ def standardize_crystal_method(df):
     df['crystal_method'] = df['crystal_method'].fillna('').apply(process_crystal_method)
     
     return df
+
+def filter_for_single_entities(df):
+    count = df.groupby('pdb_id').size().reset_index()
+    singles = set(count[count[0]==1].pdb_id.values)
+    df = df[df.pdb_id.isin(singles)]
+    
+    return df
+
+def filter_by_pdbx_details_length(df, min_len, max_len):
+    df = df[df.pdbx_details.str.len().between(min_len,max_len)]
+    return df
