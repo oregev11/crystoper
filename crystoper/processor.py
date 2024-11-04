@@ -31,6 +31,8 @@ def preprocess_pdb_data(input_path, output_path,
     
     df = standardize_crystal_method(df)
     
+    df.pdbx_details = df.pdbx_details.replace('\n', ' ')
+
     print_missing_report(df)
     
     #reorder    
