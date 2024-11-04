@@ -2,6 +2,12 @@
 #ESM-crystoper models
 from . import config
 
+#encode a single sequence with ESM
+def esm_encode(sequence, model, tokenizer, device):
+    model.eval()
+    with torch.no_grad():
+        input_ids = esm_tokenizer(sequence, return_tensors="pt").to(device)
+        return model(**input_ids)
 
 class ESMCcomplex(torch.nn.Module, n_words=config.N_WORDS_IN_DETAILS):
     def __init__(self, model_name="facebook/esm2_t33_650M_UR50D"):
