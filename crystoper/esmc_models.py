@@ -1,5 +1,6 @@
 #esmc_models.py
 #ESM-crystoper models
+
 from . import config
 
 #encode a single sequence with ESM
