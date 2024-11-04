@@ -15,19 +15,13 @@ def parse_args():
     
     parser = argparse.ArgumentParser(description="Parse PDB 'entries' and 'polymer entities' json files.")
     
-    parser.add_argument('-i', '--data-path', type=str, default=config.processed_data_path,
-                        help='output path (csv)')
-   
-   
-    parser.add_argument('-d', '--dont-save-data',  action='store_true',
-                        help='dont save the splitted data (train, test, val, toy)')
+    parser.add_argument('-m', '--model', type=str, default='esmc-complex',
+                        help='model to use (if checkpoint is passed - it will be loaded instead)')
+    parser.add_argument('-c', '--checkpoint', type=str, default=None,
+                        help='Checkpoint for loading a pre-trained model')
     
     
     
-    
-    
-    
-
         
     args = parser.parse_args()
     
@@ -39,12 +33,7 @@ def main():
     args = parse_args()
     
     df = pd.read_csv(args.data_path)
-    
-    df = filter_for_single_entities(df)
-    
-    df = filter_by_pdbx_details_length(df, args.minimum_details_length, args.maximum_details_length)
-    
-    df.pdbx_details = df.pdbx_details.str.replace('\n', ' ')
+ 
     
    
         
