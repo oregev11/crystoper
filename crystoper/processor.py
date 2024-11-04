@@ -43,6 +43,8 @@ def filter_pdb_data(df,
                     filter_non_proteins,
                     chains_per_entry,
                     filter_empty_details,
+                    minimum_details_length,
+                    maximum_details_length,
                     **kwargs):
 
     #save original lengths for later printings
@@ -90,9 +92,12 @@ def filter_pdb_data(df,
         df_entries = df_entries.query('pdbx_details.notna()')
         
         vprint(f'{n_entries - len(df_entries)} entries with no "pdbx_details" were removed!')
-            
+        
+                
     #re-merge data (it will be filtered according to the entries left in df_entries due to left merge)
     df = df_entries.merge(df_pe, how='left')
+    
+    df = filter_by_pdbx_details_length(df, minimum_details_length, maximum_details_length)
     
     vprint("\n\nTotal filtered values:")
     
