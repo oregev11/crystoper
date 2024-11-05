@@ -9,10 +9,10 @@ from transformers import EsmForMaskedLM
 def esm_encode(sequence, model, tokenizer):
     model.eval()
     with torch.no_grad():
-        input_ids = esm_tokenizer(sequence, return_tensors="pt")
+        input_ids = tokenizer(sequence, return_tensors="pt")
         return model(**input_ids)
 
-def load_example(path=join(DATA_ROOT, 'example.pt')):
+def load_example(path=config.example_path):
     #load a simple example of sequence, BART matrix and true pdbx_details
     return torch.load(path)
 

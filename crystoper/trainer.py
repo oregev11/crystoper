@@ -2,17 +2,19 @@ from os.path import join
 from os import makedirs
 from glob import glob
 from pathlib import Path
-
+from tqdm import tqdm 
 from sklearn.model_selection import train_test_split
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+from torch.cuda.amp import autocast
+
 from transformers import EsmTokenizer, BartTokenizer, BartModel, BartForConditionalGeneration
 
 
 from . import config
 from .bart import bart_decode
-from .esmc_models import esm_encode
+from .esmc_models import esm_encode, load_example
 from .dataset import  Sequence2BartDataset
 
 
@@ -63,6 +65,8 @@ class ESMCTrainer():
         #init batch over shard files (if it is not a fresh model load last batch form log)
         global_batch_idx = 0 if self.start_from_shard == 0 else\
                             load_log(self.log_path)['train_loss']['batch'].max()
+        
+        example = load_example()
                             
         #itterate the shard train files and train on each one of them
         for shard_file_index, (data_train_shard, path) in enumerate(load_shard_vectors(self.train_folder), ):
@@ -79,37 +83,37 @@ class ESMCTrainer():
                                                         self.optimizer, global_batch_idx, self.batch_size,
                                                         self.logger, self.device)
 
-                pred = seq2sent(example["sequence"], self.esm_model, self.esm_tokenizer, self.bart_model, self.bart_tokenizer, device, ac=True)
+                pred = seq2sent(example["sequence"], self.esm_model, self.esm_tokenizer, self.bart_model, self.bart_tokenizer, ac=True)
 
                 print(f'Finished file {shard_file_index} from train data. predicted: {pred}')
 
                 self.logger.info(LogLine(batch=global_batch_idx,
-                                    i = global_batch_idx * batch_size,
+                                    i = global_batch_idx * self.batch_size,
                                     pred_sent = pred))
 
                 print('Evaluating val loss...')
 
                 #perform validation (done after each shard file of the training)
-                val_loss = evaluate_model(model, val_loader, batch_size, loss_fn, device)
+                val_loss = evaluate_model(self.esm_model, val_loader, self.batch_size, self.loss_fn)
 
                 self.logger.info(LogLine(batch=global_batch_idx,
-                                    i = global_batch_idx * batch_size,
+                                    i = global_batch_idx * self.batch_size,
                                     val_loss=val_loss))
 
-                print(f"i: {batch_size*global_batch_idx},  val loss: {val_loss}")
+                print(f"i: {self.batch_size*global_batch_idx},  val loss: {val_loss}")
 
                 torch.cuda.empty_cache()
 
                 #dump model (dump after each shard file as a backup incase of connection loss)
-                model_path = join(output_folder_path, name + f'_trainfile{shard_file_index}.pkl')
+                model_path = join(self.output_folder, self.session_name + f'_trainfile{shard_file_index}.pkl')
                 print(f'Dumping model to {model_path}...')
-                torch.save(model, model_path)
+                torch.save(self.esm_model, model_path)
                 print(f'Saved model to {model_path}')
 
                 #dump final model
-        model_path = join(output_folder_path, name + '.pkl')
+        model_path = join(self.output_folder, self.session_name + '.pkl')
         print(f'Dumping model to {model_path}...')
-        torch.save(model, model_path)
+        torch.save(self.esm_model, model_path)
         print(f'Saved model to {model_path}')
 
 
@@ -117,7 +121,10 @@ class ESMCTrainer():
 
 # load all BART decoded shared files from a folder (by order)
 def load_shard_vectors(path, start_from=0):
-    for path in glob(join(path, 'bart_vectors_*.pkl')):
+    paths =  glob(join(path, 'bart_vectors_*.pkl'))
+    paths = sorted(paths, key=lambda path: int(Path(path).stem.split('_')[-1])) #sort by number at end of name
+    
+    for path in paths:
         n_file = int(Path(path).stem.split('_')[-1])
         print(f'parsed n: {n_file}')
         if n_file >= start_from:
@@ -126,23 +133,13 @@ def load_shard_vectors(path, start_from=0):
         else:
             print(f'skipping {path}...')
 
-def train_model(model, train_loader, loss_fn, optimizer, global_batch_idx, batch_size,
-                                  logger, device, verbose=True):
-    """
-    Train the model with validation loss tracking.
-
-    Args:
-    - model: The PyTorch model to be trained.
-    - train_loader: DataLoader for training data.
-    - val_loader: DataLoader for validation data.
-    - loss_fn: The loss function to use.
-    - optimizer: The optimizer for updating model parameters.
-    - num_epochs: Number of training epochs.
-    - device: Device to use ('cpu' or 'cuda').
-
-    Returns:
-    - nested dict - loging of performacnce during train
-    """
+def train_model(model, train_loader,
+                loss_fn, optimizer,
+                global_batch_idx,
+                batch_size,
+                logger,
+                device, verbose=True):
+    
     model.to(device)
 
     model.train()  # Set model to training mode
@@ -162,9 +159,9 @@ def train_model(model, train_loader, loss_fn, optimizer, global_batch_idx, batch
 
 
         result = LogLine(epoch='',
-                         batch=global_batch_idx + batch_idx,
+                        batch=global_batch_idx + batch_idx,
                          i= (global_batch_idx + batch_idx) * batch_size,
-                         train_loss= loss.item())
+                        train_loss= loss.item())
 
         logger.info(result)
 
@@ -181,7 +178,7 @@ def train_model(model, train_loader, loss_fn, optimizer, global_batch_idx, batch
     return batch_idx + global_batch_idx, loss.item()
 
 #before first epoch training we will create an evalutaion method
-def evaluate_model(model, val_loader, batch_size, loss_fn, device):
+def evaluate_model(model, val_loader, batch_size, loss_fn):
 
     model.eval()  # Set the model to evaluation mode
     total_loss = 0.0
@@ -200,12 +197,12 @@ def evaluate_model(model, val_loader, batch_size, loss_fn, device):
     avg_loss = total_loss / idx  # Calculate average loss over all batches
     return avg_loss
 
-def seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, device, ac=False):
+def seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, ac=False):
     if ac:
         with autocast():
-            return _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, device)
+            return _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer)
     else:
-        return _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, device)
+        return _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer)
 
 
 def _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer):
@@ -272,12 +269,12 @@ class LogLine():
 
     def __init__(self, **kwargs):
         self.d = {'epoch': None,
-                  'batch': None,
-                  'i': None,
-                  'train_loss': None,
-                  "val_loss" : None,
-                  'true_sent': None,
-                  'pred_sent': None}
+                'batch': None,
+                'i': None,
+                'train_loss': None,
+                "val_loss" : None,
+                'true_sent': None,
+                'pred_sent': None}
         for k,v in kwargs.items():
             if k in self.d.keys():
                 self.d[k] = v
