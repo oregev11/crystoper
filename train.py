@@ -19,7 +19,8 @@ def parse_args():
                         help='model to use (if checkpoint is passed - it will be loaded instead)')
     parser.add_argument('-c', '--checkpoint', type=str, default=None,
                         help='Checkpoint for loading a pre-trained model')
-    
+    # self.train_folder = join(config.details_vectors_path, 'train')
+    # self.val_folder = join(config.details_vectors_path, 'train')
     
     
         

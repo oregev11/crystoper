@@ -1,5 +1,9 @@
-
+from os.path import join
+from os import makedirs
+from . import config
 from sklearn.model_selection import train_test_split
+from .bart import bart_decode
+from .esmc_models import esm_encode
 
 def train_test_val_toy_split(df, test_size, val_size):
     train_df, test_df = train_test_split(df, test_size=test_size, random_state=42)
@@ -8,6 +12,106 @@ def train_test_val_toy_split(df, test_size, val_size):
     
     return train_df, test_df, val_df, toy_df
 
+class ESMCTrainer():
+    def __init___(session_name, esm_model, esm_tokenizer, train_folder, val_pkl_path, batch_size, loss, optimizer, lr, shuffle, device, start_from_shard=0):
+        """_summary_
+
+        Args:
+            session_name (str): name of the session 
+            model (obj): ESMC model
+            train_folder (str): path to train folder with multiple train pickle files ()
+            val_path (str): Path to validation data pickle file (single file)
+            batch_size (int): batch size for training
+            loss (func): torch.nn loss function
+            optimizer (obj): torch.optim optimizer
+            lr (float): learning rate
+            shuffle (boolean): shuffle train instances
+            start_from_shard (int, optional): number of train shard file to start from. (for example - if 1, training will skip instances in bart_vectors_0.pkl )
+        """
+        
+        self.session_name = session_name
+        self.esm_model = esm_model
+        self.esm_tokenizer = esm_tokenizer
+        self.train_folder = train_folder
+        self.val_pkl_path = val_pkl_path
+        
+        self.loss = loss
+        self.optimizer = optimizer
+        self.lr = lr
+        self.shuffle=shuffle
+        self.device = device
+                
+        self.output_folder = join(config.checkpoints_path, session_name)
+        makedirs(self.output_folder)
+        
+        self.log_path = join(self.output_folder_path, self.session_name + '.txt')
+        logger = SimpleLogger(log_path, overwrite=start_from_shard_file_num == 0)
+        
+        self.bart_tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
+        #Bart is only used for a single instance sanitiy inference in each epoch so cpu can be used to avoid GPU overload
+        self.bart_model = BartForConditionalGeneration.from_pretrained('facebook/bart-base').to('cpu') 
+        
+    def single_epoch_train(self):
+        
+        #create validation datasets and loader
+        val_data = torch.load(self.val_pkl_path, weights_only=True)
+        val_dataset = Sequence2BartDataset(val_data['sequences'], val_data['det_vecs'], esm_tokenizer, device=device)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, collate_fn=val_dataset.collate, shuffle=shuffle)
+        
+        #init batch over shard files (if it is not a fresh model load last batch form log)
+        global_batch_idx = 0 if start_from_shard_file_num == 0 else\
+                            load_log(self.log_path)['train_loss']['batch'].max()
+                            
+        #itterate the shard train files and train on each one of them
+        for shard_file_index, (data_train_shard, path) in enumerate(load_shard_vectors(self.train_folder), ):
+
+            #skip shard files they are below starting point
+            if shard_file_index >= self.start_from_shard_file_num:
+
+                #create dataset and loader for this piece of data
+                train_dataset = Sequence2BartDataset(data_train_shard['sequences'], data_train_shard['det_vecs'], esm_tokenizer, device=self.device)
+                train_loader = DataLoader(train_dataset, batch_size=self.batch_size, collate_fn=train_dataset.collate)
+
+
+                global_batch_idx, last_loss = train_model(self.esm_model, train_loader, self.loss_fn,
+                                                        self.optimizer, global_batch_idx, self.batch_size,
+                                                        self.logger, self.device)
+
+                pred = seq2sent(example["sequence"], self.esm_model, self.esm_tokenizer, self.bart_model, self.bart_tokenizer, device, ac=True)
+
+                print(f'Finished file {shard_file_index} from train data. predicted: {pred}')
+
+                logger.info(LogLine(batch=global_batch_idx,
+                                    i = global_batch_idx * batch_size,
+                                    pred_sent = pred))
+
+                print('Evaluating val loss...')
+
+                #perform validation (done after each shard file of the training)
+                val_loss = evaluate_model(model, val_loader, batch_size, loss_fn, device)
+
+                logger.info(LogLine(batch=global_batch_idx,
+                                    i = global_batch_idx * batch_size,
+                                    val_loss=val_loss))
+
+                print(f"i: {batch_size*global_batch_idx},  val loss: {val_loss}")
+
+                torch.cuda.empty_cache()
+
+                #dump model (dump after each shard file as a backup incase of connection loss)
+                model_path = join(output_folder_path, name + f'_trainfile{shard_file_index}.pkl')
+                print(f'Dumping model to {model_path}...')
+                torch.save(model, model_path)
+                print(f'Saved model to {model_path}')
+
+                #dump final model
+        model_path = join(output_folder_path, name + '.pkl')
+        print(f'Dumping model to {model_path}...')
+        torch.save(model, model_path)
+        print(f'Saved model to {model_path}')
+
+
+        print('DONE!')
 
 # load all BART decoded shared files from a folder (by order)
 def load_shard_vectors(path, start_from=0):
@@ -21,7 +125,7 @@ def load_shard_vectors(path, start_from=0):
             print(f'skipping {path}...')
 
 def train_model(model, train_loader, loss_fn, optimizer, epoch, global_batch_idx, batch_size,
-                                bart_model, bart_tokenizer, logger, device, verbose=True):
+                                  logger, device, verbose=True):
     """
     Train the model with validation loss tracking.
 
@@ -60,7 +164,7 @@ def train_model(model, train_loader, loss_fn, optimizer, epoch, global_batch_idx
                          i= (global_batch_idx + batch_idx) * batch_size,
                          train_loss= loss.item())
 
-        logger.info(result)
+        self.logger.info(result)
 
         if batch_idx % 100 == 0:
             logger.dump()
@@ -102,9 +206,9 @@ def seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, device, 
         return _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, device)
 
 
-def _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, device):
-    esm_encoded_matrix = esm_encode(seq, esm_model, esm_tokenizer, device)
-    decoded_sentence = bart_decode(esm_encoded_matrix, bart_model, bart_tokenizer, device)
+def _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer):
+    esm_encoded_matrix = esm_encode(seq, esm_model, esm_tokenizer)
+    decoded_sentence = bart_decode(esm_encoded_matrix, bart_model, bart_tokenizer)
     return decoded_sentence
 
 

@@ -4,10 +4,10 @@
 from . import config
 
 #encode a single sequence with ESM
-def esm_encode(sequence, model, tokenizer, device):
+def esm_encode(sequence, model, tokenizer):
     model.eval()
     with torch.no_grad():
-        input_ids = esm_tokenizer(sequence, return_tensors="pt").to(device)
+        input_ids = esm_tokenizer(sequence, return_tensors="pt")
         return model(**input_ids)
 
 class ESMCcomplex(torch.nn.Module, n_words=config.N_WORDS_IN_DETAILS):
