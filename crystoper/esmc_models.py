@@ -2,6 +2,8 @@
 #ESM-crystoper models
 
 from . import config
+import torch 
+from transformers import EsmForMaskedLM
 
 #encode a single sequence with ESM
 def esm_encode(sequence, model, tokenizer):
@@ -10,8 +12,12 @@ def esm_encode(sequence, model, tokenizer):
         input_ids = esm_tokenizer(sequence, return_tensors="pt")
         return model(**input_ids)
 
-class ESMCcomplex(torch.nn.Module, n_words=config.N_WORDS_IN_DETAILS):
-    def __init__(self, model_name="facebook/esm2_t33_650M_UR50D"):
+def load_example(path=join(DATA_ROOT, 'example.pt')):
+    #load a simple example of sequence, BART matrix and true pdbx_details
+    return torch.load(path)
+
+class ESMCcomplex(torch.nn.Module):
+    def __init__(self, model_name="facebook/esm2_t33_650M_UR50D", n_words=config.N_WORDS_IN_DETAILS):
         super().__init__()
         
         self.n_words = n_words

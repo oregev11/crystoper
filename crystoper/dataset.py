@@ -2,7 +2,7 @@
 dataset.py
 Customize torch Dataset object
 """
-
+import torch
 from torch.utils.data import Dataset
 from . import config
 
