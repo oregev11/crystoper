@@ -6,8 +6,8 @@ import argparse
 from crystoper import config
 from crystoper.processor import preprocess_pdb_data
 from crystoper.utils.general import vprint
-
 from crystoper.trainer import train_test_val_toy_split
+from crystoper.utils.general import make_parent_dirs
 
 
 def parse_args():
@@ -51,6 +51,13 @@ def parse_args():
 def main():
 
     args = parse_args()
+    
+    for path in (config.processed_data_path, 
+                 config.train_path,
+                 config.test_path,
+                 config.val_path,
+                 config.toy_path):
+        make_parent_dirs(path)
     
     df = preprocess_pdb_data(**vars(args))
     
