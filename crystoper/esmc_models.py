@@ -11,7 +11,7 @@ def esm_encode(sequence, model, tokenizer):
     with torch.no_grad():
         input_ids = tokenizer(sequence, return_tensors="pt")
         
-        device = next(esm_model.parameters()).device
+        device = next(model.parameters()).device
         input_ids = {key: value.to(device) for key, value in inputs.items()}
 
         return model(**input_ids)
