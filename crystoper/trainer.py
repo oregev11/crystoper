@@ -92,7 +92,8 @@ class ESMCTrainer():
                 print('Evaluating val loss...')
 
                 #perform validation (done after each shard file of the training)
-                val_loss = evaluate_model(self.esm_model, self.val_folder, self.batch_size, self.loss_fn)
+                val_loss = evaluate_model(self.esm_model, self.esm_tokenizer, self.val_folder, self.batch_size, self.loss_fn, self.device, self.shuffle)
+                
 
                 self.logger.info(LogLine(batch=global_batch_idx,
                                     i = global_batch_idx * self.batch_size,
@@ -179,7 +180,7 @@ def train_model(model, train_loader,
     return batch_idx + global_batch_idx, loss.item()
 
 #before first epoch training we will create an evalutaion method
-def evaluate_model(model, val_folder, batch_size, loss_fn):
+def evaluate_model(model,tokenizer, val_folder,  batch_size, loss_fn, device, shuffle):
 
     model.eval()  # Set the model to evaluation mode
     total_loss = 0.0
@@ -189,8 +190,8 @@ def evaluate_model(model, val_folder, batch_size, loss_fn):
         #iterate the val shard files, load them and evaluate
         for _, (data_val_shard, _) in enumerate(load_shard_vectors(val_folder), ):
             #create validation datasets and loader
-            val_dataset = Sequence2BartDataset(data_val_shard['sequences'], data_val_shard['det_vecs'], self.esm_tokenizer, device=self.device)
-            val_loader = DataLoader(val_dataset, batch_size=self.batch_size, collate_fn=val_dataset.collate, shuffle=self.shuffle)
+            val_dataset = Sequence2BartDataset(data_val_shard['sequences'], data_val_shard['det_vecs'], tokenizer, device=device)
+            val_loader = DataLoader(val_dataset, batch_size=batch_size, collate_fn=val_dataset.collate, shuffle=shuffle)
             
             for _, batch in tqdm(enumerate(val_loader), total=len(val_loader)):
 
