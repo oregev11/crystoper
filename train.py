@@ -87,7 +87,7 @@ def main():
             print(f'Train will continue the previous epoch: epoch {next_epoch}')
             
         else:
-            prev_epoch = int(args.checkpoint.split('_')[-1][1:])
+            prev_epoch = int(Path(args.checkpoint).stem.split('_')[-1][1:])
             next_epoch = prev_epoch + 1
             base_session_name = get_session_name_from_checkpoint(args.checkpoint)
             
