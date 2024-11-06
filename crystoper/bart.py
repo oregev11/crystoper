@@ -29,7 +29,7 @@ def bart_encode(sentence, model, tokenizer, max_len=N_WORDS_IN_DETAILS, device=N
     return hidden_states
 
 def bart_decode(encoder_hidden_states, model, tokenizer, device='cpu'):
-
+    encoder_hidden_states = encoder_hidden_states.to(device)
     wrapped_hiddens = BaseModelOutput(last_hidden_state=encoder_hidden_states)
     model.to(device)
 
