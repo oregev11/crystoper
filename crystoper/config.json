@@ -1,5 +1,6 @@
 {   
     "verbose": true,
+    "N_WORDS_IN_DETAILS": 250,
     "pdb_entries_list_path": "data/pdb_data/20240927_pdb_entry_ids.json",
     "pdb_entries_path": "data/pdb_data/entries",
     "pdb_polymer_entities_list_path": "data/pdb_data/20240927_pdb_polymer_entities.json",
@@ -7,6 +8,13 @@
     "parsed_data_path": "data/pdb_data/parsed_data.csv",
     "processed_data_path": "data/pdb_data/processed_data.csv",
     "sequences_vectors_path": "vectors/sequences",
-    "details_vectors_path": "vectors/details"
+    "details_vectors_path": "vectors/details",
+    "train_path": "data/train.csv",
+    "test_path": "data/test.csv",
+    "val_path": "data/val.csv",
+    "toy_path": "data/toy.csv",
+    "checkpoints_path": "checkpoints",
+    "example_path": "vectors/example.pt"
+    
     
 }
