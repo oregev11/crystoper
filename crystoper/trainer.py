@@ -27,7 +27,7 @@ def train_test_val_toy_split(df, test_size, val_size):
     return train_df, test_df, val_df, toy_df
 
 class ESMCTrainer():
-    def __init__(self, session_name, esm_model, train_folder, val_pkl_path, batch_size, loss_fn, optimizer, shuffle, cpu, start_from_shard=0):
+    def __init__(self, session_name, esm_model, train_folder, val_pkl_path, batch_size, loss_fn, optimizer, shuffle, cpu, start_from_shard=0, backup_mid_epoch=False):
 
         self.session_name = session_name
         self.esm_model = esm_model
@@ -42,7 +42,8 @@ class ESMCTrainer():
                     else 'cuda' if torch.cuda.is_available()\
                         else 'cpu'
         self.start_from_shard = start_from_shard
-                
+        self.backup_mid_epoch = backup_mid_epoch
+        
         self.output_folder = join(config.checkpoints_path, session_name)
         makedirs(self.output_folder, exist_ok=True)
         
@@ -105,14 +106,15 @@ class ESMCTrainer():
 
                 torch.cuda.empty_cache()
 
-                #dump model (dump after each shard file as a backup incase of connection loss)
-                model_path = join(self.output_folder, self.session_name + f'_trainfile{shard_file_index}.pkl')
-                print(f'Dumping model to {model_path}...')
-                torch.save(self.esm_model, model_path)
-                print(f'Saved model to {model_path}')
-                self.logger.dump()
+                if self.backup_mid_epoch:
+                    #dump model (dump after each shard file as a backup incase of connection loss)
+                    model_path = join(self.output_folder, self.session_name + f'_trainfile{shard_file_index}.pkl')
+                    print(f'Dumping model to {model_path}...')
+                    torch.save(self.esm_model, model_path)
+                    print(f'Saved model to {model_path}')
+                    self.logger.dump()
 
-                #dump final model
+        #dump final model
         model_path = join(self.output_folder, self.session_name + '.pkl')
         print(f'Dumping model to {model_path}...')
         torch.save(self.esm_model, model_path)

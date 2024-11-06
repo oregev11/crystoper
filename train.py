@@ -41,6 +41,8 @@ def parse_args():
     parser.add_argument('-st', '--start-from-shard', type=int, default=0,
                         help='index of shard train file to start from .default is 0. if run was crushed during epoch, you can start from the middle of epoch\
                             by starting from the last loaded train shard file.')
+    parser.add_argument('--bu', '--backup-mid-epoch', action='store_true',
+                        help='backup the model in the middle of the epoch after each train shard file')
     
     
     args = parser.parse_args()
@@ -101,7 +103,8 @@ def main():
                               optimizer=optim.Adam(esm_model.parameters(), lr=args.learning_rate),
                               shuffle=args.shuffle,
                               cpu=args.cpu,
-                              start_from_shard=start_from_shard)
+                              start_from_shard=start_from_shard,
+                              backup_mid_epoch=args.backup_mid_epoch)
         
         trainer.single_epoch_train()
             
