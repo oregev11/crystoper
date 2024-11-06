@@ -43,6 +43,8 @@ def parse_args():
                             by starting from the last loaded train shard file.')
     parser.add_argument('--bu', '--backup-mid-epoch', action='store_true',
                         help='backup the model in the middle of the epoch after each train shard file')
+    parser.add_argument('--toy-train', action='store_true',
+                        help='use toy data for training for debug purposes')
     
     
     args = parser.parse_args()
@@ -96,7 +98,7 @@ def main():
         
         trainer = ESMCTrainer(session_name=base_session_name + f'_e{epoch}',
                               esm_model=esm_model,
-                              train_folder=join(config.details_vectors_path, 'train'),
+                              train_folder=join(config.details_vectors_path, 'toy' if args.toy_train else 'train'),
                               val_pkl_path=join(config.details_vectors_path, 'validation', 'bart_vectors_0.pkl'),
                               batch_size=args.batch_size,
                               loss_fn = nn.MSELoss(),
