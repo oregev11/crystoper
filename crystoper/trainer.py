@@ -211,8 +211,9 @@ def seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, ac=False
         return _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer)
 
 
-def _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer):
+def _seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, bart_device='cpu'):
     esm_encoded_matrix = esm_encode(seq, esm_model, esm_tokenizer)
+    esm_encoded_matrix.to(bart_device)
     decoded_sentence = bart_decode(esm_encoded_matrix, bart_model, bart_tokenizer)
     return decoded_sentence
 
