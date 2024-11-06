@@ -99,6 +99,7 @@ class SequencesVectorizer():
 
         if VERBOSE:
             print(f'Starting protein sequence extraction! {len(sequences)} sequences in {len(sequences) // self.batch_size} batches...')
+            print(f'Using {self.device}')
         seq2vec = Sequence2Vectors(model.to(self.device), pooling=self.pooling, hidden_fn=self.hidden_fn)
         vectors = seq2vec(data_iter)
 
