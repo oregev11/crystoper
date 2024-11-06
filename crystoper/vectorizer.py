@@ -192,7 +192,8 @@ class DetailsVectorizer():
 
                 del hidden
 
-                if i % self.dump_batch_size == 0 and i > 0:
+                instance_index = i * self.batch_size
+                if  instance_index % ((self.dump_batch_size // self.batch_size) * self.batch_size) == 0 and i > 0:
                     det_vecs = torch.cat(det_vecs, dim=0)
 
                     dump_dict = {'det_vecs': det_vecs,
