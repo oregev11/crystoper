@@ -63,7 +63,8 @@ def main():
         
         vec = SequencesVectorizer(model=args.sequences_model,
                                   batch_size = args.sequences_batch_size,
-                                  pooling=args.sequences_pooling)
+                                  pooling=args.sequences_pooling,
+                                  cpu=args.cpu)
 
         vectors = vec(sequences)
         
