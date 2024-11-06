@@ -78,7 +78,7 @@ def main():
         
         for data_path  in (config.toy_path, config.train_path, config.test_path, config.val_path):
             
-            makedirs(Path(data_path).parent)
+            makedirs(Path(data_path).parent, exist_ok=True)
             
             data_name = Path(data_path).stem
                     
