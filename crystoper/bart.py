@@ -7,7 +7,7 @@ N_WORDS_IN_DETAILS = 250
 def bart_encode(sentence, model, tokenizer, max_len=N_WORDS_IN_DETAILS, device=None):
 
     inputs = tokenizer(sentence, return_tensors="pt", add_special_tokens=True)
-    print(f'THE DEVICE IS {device}')
+    print(f'Bart will use the following device: {device}')
     inputs = {key: value.to(device) for key, value in inputs.items()}
     
     # Get the embeddings from the encoder
