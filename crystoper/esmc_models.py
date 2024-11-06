@@ -10,6 +10,10 @@ def esm_encode(sequence, model, tokenizer):
     model.eval()
     with torch.no_grad():
         input_ids = tokenizer(sequence, return_tensors="pt")
+        
+        device = model.device
+        input_ids = {key: value.to(device) for key, value in inputs.items()}
+
         return model(**input_ids)
 
 def load_example(path=config.example_path):
