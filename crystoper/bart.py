@@ -4,7 +4,7 @@ from transformers.modeling_outputs import BaseModelOutput
 
 N_WORDS_IN_DETAILS = 250
 
-def bart_encode(sentence, model, tokenizer, max_len=N_WORDS_IN_DETAILS, device='cpu'):
+def bart_encode(sentence, model, tokenizer, max_len=N_WORDS_IN_DETAILS):
 
     inputs = tokenizer(sentence, return_tensors="pt", add_special_tokens=True).to(device)
 

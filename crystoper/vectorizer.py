@@ -140,6 +140,8 @@ class DetailsVectorizer():
             model =  BartForConditionalGeneration.from_pretrained(self.model_name)
             tokenizer = BartTokenizer.from_pretrained(self.model_name)
             
+            model.to(self.device)
+            
             #test model
             encoder_hidden_states = bart_encode(TEST_SENTENCE, model, tokenizer, device=self.device)
             reconstructed_sentence = bart_decode(encoder_hidden_states, model, tokenizer, 'cpu')
