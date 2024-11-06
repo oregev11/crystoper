@@ -3,6 +3,7 @@ from os import makedirs
 from glob import glob
 from pathlib import Path
 from tqdm import tqdm 
+import pandas as pd
 from sklearn.model_selection import train_test_split
 import torch
 from torch.utils.data import Dataset
@@ -109,12 +110,14 @@ class ESMCTrainer():
                 print(f'Dumping model to {model_path}...')
                 torch.save(self.esm_model, model_path)
                 print(f'Saved model to {model_path}')
+                self.logger.dump()
 
                 #dump final model
         model_path = join(self.output_folder, self.session_name + '.pkl')
         print(f'Dumping model to {model_path}...')
         torch.save(self.esm_model, model_path)
         print(f'Saved model to {model_path}')
+        self.logger.dump()
 
 
         print('DONE!')
@@ -259,10 +262,12 @@ def read_log_file(file_path):
     return dict_list
 
 def load_log(path):
-    df = pd.DataFrame(read_log_file(log_path))
-    return {'train_loss': df[df.train_loss.notna()],
-            'val_loss' : df[df.val_loss.notna()],
-            'pred_sent' :  df[df['pred_sent'].notna()]}
+    df = pd.DataFrame(read_log_file(path))
+    if len(df)>0:
+        return {'train_loss': df[df.train_loss.notna()],
+                'val_loss' : df[df.val_loss.notna()],
+                'pred_sent' :  df[df['pred_sent'].notna()]}
+
 
 class LogLine():
     #define a line in log
