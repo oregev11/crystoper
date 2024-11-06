@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument('-st', '--start-from-shard', type=int, default=0,
                         help='index of shard train file to start from .default is 0. if run was crushed during epoch, you can start from the middle of epoch\
                             by starting from the last loaded train shard file.')
-    parser.add_argument('--bu', '--backup-mid-epoch', action='store_true',
+    parser.add_argument('-bu', '--backup-mid-epoch', action='store_true',
                         help='backup the model in the middle of the epoch after each train shard file')
     parser.add_argument('--toy-train', action='store_true',
                         help='use toy data for training for debug purposes')
