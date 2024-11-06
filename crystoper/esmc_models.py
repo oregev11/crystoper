@@ -4,7 +4,7 @@
 from . import config
 import torch 
 from transformers import EsmForMaskedLM
-
+N_WORDS_IN_DETAILS = 250 
 #encode a single sequence with ESM
 def esm_encode(sequence, model, tokenizer):
     model.eval()
@@ -21,10 +21,8 @@ def load_example(path=config.example_path):
     return torch.load(path)
 
 class ESMCcomplex(torch.nn.Module):
-    def __init__(self, model_name="facebook/esm2_t33_650M_UR50D", n_words=config.N_WORDS_IN_DETAILS):
+    def __init__(self, model_name="facebook/esm2_t33_650M_UR50D"):
         super().__init__()
-        
-        self.n_words = n_words
         
         # Load the pre-trained ESM model
         self.esm = EsmForMaskedLM.from_pretrained(model_name, output_hidden_states=True)
@@ -39,7 +37,7 @@ class ESMCcomplex(torch.nn.Module):
         # Assuming the hidden size of ESM is 1280 and we want a 500x768 output
         self.dropout = torch.nn.Dropout(p=0.2)
         self.linear1 = torch.nn.Linear(1280, 1024)  # Intermediate layer
-        self.linear2 = torch.nn.Linear(1024, 768 * self.n_words)
+        self.linear2 = torch.nn.Linear(1024, 768 * N_WORDS_IN_DETAILS)
         self.activation = torch.nn.ReLU()
         self.layer_norm = torch.nn.LayerNorm(1024)
 
@@ -51,7 +49,7 @@ class ESMCcomplex(torch.nn.Module):
         hidden_states = self.dropout(hidden_states)
         transformed = self.activation(self.linear1(hidden_states))
         transformed = self.layer_norm(transformed + self.linear1(hidden_states))  # Residual connection
-        matrix_output = self.linear2(transformed).view(-1, self.n_words, 768)
+        matrix_output = self.linear2(transformed).view(-1, N_WORDS_IN_DETAILS, 768)
 
         return matrix_output
     
