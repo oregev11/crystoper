@@ -5,7 +5,8 @@ train model
 import argparse
 from os.path import join
 from pathlib import Path
-
+import re 
+import torch
 import torch.nn as nn
 import torch.optim as optim
 
@@ -51,22 +52,41 @@ def main():
 
     args = parse_args()
     
-    if args.model and args.checkpoint:
-        raise Error('--model and --checkpoint can not be passed together. choose checkpoint to start training from, or load a fresh model')
-    if args.model == 'esmc-complex':
+    if args.checkpoint:
+        esm_model = torch.load(args.checkpoint)
+       
+    elif args.model == 'esmc-complex':
         esm_model = ESMCcomplex()
     else:
-        esm_model = torch.load(args.checkpoint)
+        raise ValueError('Model cannot be resolved')
+        
             
     next_epoch = 1
+    start_from_shard = args.start_from_shard
     
-    #if checkpoint exist, parse the epoch number from the name (name should look like: 'esmccomplex_singles_113K_e3' meaning the model was traind for 3 epochs)
+    #If checkpoint was passed, parse the epoch number from the name (name should look like: 'esmccomplex_singles_113K_e3.pkl' meaning the model was traind for 3 epochs)
+    #If the passed checkpoint was from incomplete epoch, it should look like 'esmccomplex_singles_113K_e3_trainfile2.pkl' meaning the model is from epoch 3 trained on trainfiles 0, 1 and 2. 
+    #training will continue the session from on the rest of the train files
     if args.checkpoint:
-        prev_epoch = int(args.checkpoint.split('_')[-1][1:])
-        next_epoch = prev_epoch + 1
-    
-    if args.checkpoint:
+        #if last epoch was incomplete
+        if 'trainfile' in args.checkpoint:
+            last_train_file = get_last_train_file_from_checkpoint(args.checkpoint)
+            print(f'Last train file for checkpoint was: {last_train_file}')
+            
+            start_from_shard = last_train_file + 1
+            print(f'Starting current train from train file: {start_from_shard}')
+            
+            base_session_name = get_session_name_from_checkpoint(args.checkpoint, is_trainfile=True)
+            
+            prev_epoch = int(args.checkpoint.split('_')[-2][1:])
+            next_epoch = prev_epoch
+            print(f'Train will continue the previous epoch: epoch {next_epoch}')
+            
+        else:
+            prev_epoch = int(args.checkpoint.split('_')[-1][1:])
+            next_epoch = prev_epoch + 1
             base_session_name = get_session_name_from_checkpoint(args.checkpoint)
+            
     else:
         base_session_name = args.session_name
     
@@ -81,17 +101,31 @@ def main():
                               optimizer=optim.Adam(esm_model.parameters(), lr=args.learning_rate),
                               shuffle=args.shuffle,
                               cpu=args.cpu,
-                              start_from_shard=args.start_from_shard)
+                              start_from_shard=start_from_shard)
         
         trainer.single_epoch_train()
             
 
-if __name__ == "__main__":
-    main()
 
-def get_session_name_from_checkpoint(checkpoint):
+
+def get_session_name_from_checkpoint(checkpoint, is_trainfile=False):
     """parse the session name from the checkpoint name
     Checkpoint name format should be "<SESSION-NAME>_e<NUM>.pkl" where e<NUM> represent the epoch number.
+    if is_trainfile True - assume the term 'is_trainfile' in the checkpoint name and parse accordingly.
     
     """
-    return '_'.join(Path(checkpoint).stem.split('_')[:-1])
+    if is_trainfile:
+        return '_'.join(Path(checkpoint).stem.split('_')[:-2])
+    else:
+        return '_'.join(Path(checkpoint).stem.split('_')[:-1])
+
+def get_last_train_file_from_checkpoint(checkpoint):
+    
+    match = re.search(r'trainfile(\d+)', checkpoint)
+    if match:
+        return int(match.group(1))
+    return None  
+
+
+if __name__ == "__main__":
+    main()
