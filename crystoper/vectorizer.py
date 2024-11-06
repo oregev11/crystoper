@@ -169,7 +169,7 @@ class DetailsVectorizer():
             torch.cuda.empty_cache()
 
             save_batch_index = 0
-
+            print(f'Loading model to {self.device}')
             model.to(self.device)
             
             for i, batch in tqdm(enumerate(data_loader), total = len(data_loader)):
