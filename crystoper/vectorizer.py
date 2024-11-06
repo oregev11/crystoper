@@ -159,6 +159,9 @@ class DetailsVectorizer():
             makedirs(output_folder, exist_ok=True)
 
             model, tokenizer = self.get_model()
+            print(f'Loading model to {self.device}')            
+            model.to(self.device)
+            
             dataset = BartDetailsDataset(data.pdb_id, data.sequence, data.pdbx_details, tokenizer, device=self.device)
             data_loader = DataLoader(dataset, batch_size=self.batch_size, collate_fn=dataset.collate)
 
@@ -173,9 +176,8 @@ class DetailsVectorizer():
             torch.cuda.empty_cache()
 
             save_batch_index = 0
-            print(f'Loading model to {self.device}')
-            model.to(self.device)
-            
+
+                        
             for i, batch in tqdm(enumerate(data_loader), total = len(data_loader)):
 
                 hidden = model.model.encoder(**batch['input_ids']).last_hidden_state

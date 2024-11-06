@@ -26,7 +26,7 @@ class ProteinSequencesDataset(Dataset):
 #Dataset for bart vectors inference
 
 class BartDetailsDataset(Dataset):
-    def __init__(self, pdb_ids, sequences, details, tokenizer, device=None):
+    def __init__(self, pdb_ids, sequences, details, tokenizer, device='cpu'):
         self.pdb_ids = pdb_ids
         self.sequences = sequences
         self.details = details

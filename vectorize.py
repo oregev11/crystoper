@@ -85,8 +85,9 @@ def main():
             df = pd.read_csv(data_path)
             
             vectorizer = DetailsVectorizer(model=args.details_model,
-                                    batch_size=args.sequences_batch_size,
-                                    dump_batch_size=args.details_dump_batch_size)
+                                            batch_size=args.sequences_batch_size,
+                                            dump_batch_size=args.details_dump_batch_size,
+                                            cpu=args.cpu)
             
             output_folder = join(config.details_vectors_path, data_name)
             
