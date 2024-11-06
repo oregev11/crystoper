@@ -58,9 +58,11 @@ def main():
     
     if args.checkpoint:
         esm_model = torch.load(args.checkpoint)
+        vprint(f"loaded previous model from checkpoint {args.checkpoint}")
        
     elif args.model == 'esmc-complex':
         esm_model = ESMCcomplex()
+        vprint(f"A fresh {args.model} has been created!")
     else:
         raise ValueError('Model cannot be resolved')
         
@@ -95,6 +97,8 @@ def main():
         base_session_name = args.session_name
     
     for epoch in range(next_epoch, next_epoch + args.n_epochs):
+        
+        vprint(f'\n\n*************************\nStarting Epoch {epoch} (out of {next_epoch + args.n_epochs})!\n***********************\n\n')
         
         trainer = ESMCTrainer(session_name=base_session_name + f'_e{epoch}',
                               esm_model=esm_model,
