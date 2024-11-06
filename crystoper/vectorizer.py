@@ -124,6 +124,8 @@ class DetailsVectorizer():
                         else 'cuda' if torch.cuda.is_available() \
                             else 'cpu'
 
+        print(f"Using {self.device} fro details vectorization!" )
+        
         #get model name from a list of supported models
         if CHECKPOINTS.get(model):
             self.model_name = CHECKPOINTS[model]
