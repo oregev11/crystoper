@@ -27,13 +27,13 @@ def train_test_val_toy_split(df, test_size, val_size):
     return train_df, test_df, val_df, toy_df
 
 class ESMCTrainer():
-    def __init__(self, session_name, esm_model, train_folder, val_pkl_path, batch_size, loss_fn, optimizer, shuffle, cpu, start_from_shard=0, backup_mid_epoch=False):
+    def __init__(self, session_name, esm_model, train_folder, val_folder, batch_size, loss_fn, optimizer, shuffle, cpu, start_from_shard=0, backup_mid_epoch=False):
 
         self.session_name = session_name
         self.esm_model = esm_model
         self.esm_tokenizer = EsmTokenizer.from_pretrained("facebook/esm2_t33_650M_UR50D")
         self.train_folder = train_folder
-        self.val_pkl_path = val_pkl_path
+        self.val_folder = val_folder
         self.batch_size = batch_size
         self.loss_fn = loss_fn
         self.optimizer = optimizer
@@ -91,7 +91,7 @@ class ESMCTrainer():
                 print('Evaluating val loss...')
 
                 #perform validation (done after each shard file of the training)
-                val_loss = evaluate_model(self.esm_model, val_loader, self.batch_size, self.loss_fn)
+                val_loss = evaluate_model(self.esm_model, self.val_folder, self.batch_size, self.loss_fn)
 
                 self.logger.info(LogLine(batch=global_batch_idx,
                                     i = global_batch_idx * self.batch_size,

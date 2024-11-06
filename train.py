@@ -99,7 +99,7 @@ def main():
         trainer = ESMCTrainer(session_name=base_session_name + f'_e{epoch}',
                               esm_model=esm_model,
                               train_folder=join(config.details_vectors_path, 'toy' if args.toy_train else 'train'),
-                              val_pkl_path=join(config.details_vectors_path, 'toy' if args.toy_train else 'val'),
+                              val_folder=join(config.details_vectors_path, 'toy' if args.toy_train else 'val'),
                               batch_size=args.batch_size,
                               loss_fn = nn.MSELoss(),
                               optimizer=optim.Adam(esm_model.parameters(), lr=args.learning_rate),
