@@ -14,8 +14,8 @@ def bart_encode(sentence, model, tokenizer, max_len=N_WORDS_IN_DETAILS, device='
     with torch.no_grad():
         
         print(f'model device: {model.device}')
-        print(f'input_ids device: {inputs['input_ids'].device}')
-        print(f'attention device: {inputs['attention_mask'].device}')
+        print(f'input_ids device: {inputs["input_ids"].device}')
+        print(f'attention device: {inputs["attention_mask"].device}')
 
         hidden_states = model.model.encoder(**inputs).last_hidden_state #indclude only 'last_hidden_state'
 
