@@ -191,6 +191,7 @@ class DetailsVectorizer():
                 torch.cuda.empty_cache()
 
                 del hidden
+                
 
                 instance_index = i * self.batch_size
                 if  instance_index % ((self.dump_batch_size // self.batch_size) * self.batch_size) == 0 and i > 0:
