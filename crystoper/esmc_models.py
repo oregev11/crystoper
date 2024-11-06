@@ -12,7 +12,7 @@ def esm_encode(sequence, model, tokenizer):
         input_ids = tokenizer(sequence, return_tensors="pt")
         
         device = next(model.parameters()).device
-        input_ids = {key: value.to(device) for key, value in inputs.items()}
+        input_ids = {key: value.to(device) for key, value in input_ids.items()}
 
         return model(**input_ids)
 
