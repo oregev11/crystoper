@@ -33,7 +33,7 @@ def bart_decode(encoder_hidden_states, model, tokenizer, device='cpu'):
     print(f'encoded hidden state device {encoder_hidden_states.device}')
     encoder_hidden_states = encoder_hidden_states.to(model.device)
     wrapped_hiddens = BaseModelOutput(last_hidden_state=encoder_hidden_states)
-    print(f'wrapped device {wrapped_hiddens.device}')
+    # print(f'wrapped device {wrapped_hiddens.device}')
     
     generated_ids = model.generate(encoder_outputs=wrapped_hiddens, min_length=0, max_length=N_WORDS_IN_DETAILS,
                                    length_penalty=1, repetition_penalty=1.2, early_stopping=True)
