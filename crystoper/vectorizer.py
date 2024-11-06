@@ -94,13 +94,15 @@ class SequencesVectorizer():
     def get_vectors(self, sequences):
 
         model, tokenizer = self.get_model()
+        model.to(self.device)
+        
         data = self.data_constructor(sequences, tokenizer, device=self.device)
         data_iter = DataLoader(data, batch_size=self.batch_size, collate_fn=data.collate)
 
         if VERBOSE:
             print(f'Starting protein sequence extraction! {len(sequences)} sequences in {len(sequences) // self.batch_size} batches...')
             print(f'Using {self.device}')
-        seq2vec = Sequence2Vectors(model.to(self.device), pooling=self.pooling, hidden_fn=self.hidden_fn)
+        seq2vec = Sequence2Vectors(model, pooling=self.pooling, hidden_fn=self.hidden_fn)
         vectors = seq2vec(data_iter)
 
         return vectors
