@@ -52,7 +52,7 @@ class ESMCTrainer():
         
         self.bart_tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
         #Bart is only used for a single instance sanitiy inference in each epoch so cpu can be used to avoid GPU overload
-        self.bart_model = BartForConditionalGeneration.from_pretrained('facebook/bart-base').to('cpu') 
+        self.bart_model = BartForConditionalGeneration.from_pretrained('facebook/bart-base') 
         
     def single_epoch_train(self):
         
@@ -79,8 +79,9 @@ class ESMCTrainer():
                 global_batch_idx, last_loss = train_model(self.esm_model, train_loader, self.loss_fn,
                                                         self.optimizer, global_batch_idx, self.batch_size,
                                                         self.logger, self.device)
-
+                self.bart_model.to(self.device)
                 pred = seq2sent(example["sequence"], self.esm_model, self.esm_tokenizer, self.bart_model, self.bart_tokenizer, ac=True)
+                self.bart_model.to('cpu')
 
                 print(f'Finished file {shard_file_index} from train data. predicted: {pred}')
 
