@@ -58,12 +58,7 @@ class ESMCTrainer():
         
         print(f'Loading model to {self.device}...')
         self.esm_model.to(self.device)
-        
-        #create validation datasets and loader
-        val_data = torch.load(self.val_pkl_path, weights_only=True)
-        val_dataset = Sequence2BartDataset(val_data['sequences'], val_data['det_vecs'], self.esm_tokenizer, device=self.device)
-        val_loader = DataLoader(val_dataset, batch_size=self.batch_size, collate_fn=val_dataset.collate, shuffle=self.shuffle)
-        
+                
         #init batch over shard files (if it is not a fresh model load last batch form log)
         global_batch_idx = 0 if self.start_from_shard == 0 else\
                             load_log(self.log_path)['train_loss']['batch'].max()
@@ -183,23 +178,29 @@ def train_model(model, train_loader,
     return batch_idx + global_batch_idx, loss.item()
 
 #before first epoch training we will create an evalutaion method
-def evaluate_model(model, val_loader, batch_size, loss_fn):
+def evaluate_model(model, val_folder, batch_size, loss_fn):
 
     model.eval()  # Set the model to evaluation mode
     total_loss = 0.0
     num_batches = 0
-
+    
     with torch.no_grad():  # Disable gradient calculations
-        for idx, batch in tqdm(enumerate(val_loader), total=len(val_loader)):
+        #iterate the val shard files, load them and evaluate
+        for _, (data_val_shard, _) in enumerate(load_shard_vectors(val_folder), ):
+            #create validation datasets and loader
+            val_dataset = Sequence2BartDataset(data_val_shard['sequences'], data_val_shard['det_vecs'], self.esm_tokenizer, device=self.device)
+            val_loader = DataLoader(val_dataset, batch_size=self.batch_size, collate_fn=val_dataset.collate, shuffle=self.shuffle)
+            
+            for _, batch in tqdm(enumerate(val_loader), total=len(val_loader)):
 
-            output_matrices = model(batch['input_ids'], attention_mask=batch['attention_mask'])
+                output_matrices = model(batch['input_ids'], attention_mask=batch['attention_mask'])
 
-            loss = loss_fn(output_matrices, batch['target_matrices'])
-            total_loss += loss.item()  # Accumulate the batch loss
+                loss = loss_fn(output_matrices, batch['target_matrices'])
+                total_loss += loss.item()  # Accumulate the batch loss
+                num_batches += 1
 
 
-
-    avg_loss = total_loss / idx  # Calculate average loss over all batches
+    avg_loss = total_loss / num_batches  # Calculate average loss over all batches
     return avg_loss
 
 def seq2sent(seq, esm_model, esm_tokenizer, bart_model, bart_tokenizer, ac=False):
