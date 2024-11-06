@@ -7,6 +7,7 @@ import torch
 import pandas as pd
 from pathlib import Path
 from os.path import join
+from os import makedirs
 
 from crystoper import config
 from crystoper.utils.general import vprint
@@ -76,6 +77,8 @@ def main():
     if args.extract_details_vectors:
         
         for data_path  in (config.toy_path, config.train_path, config.test_path, config.val_path):
+            
+            makedirs(Path(data_path).parent)
             
             data_name = Path(data_path).stem
                     
