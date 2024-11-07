@@ -101,11 +101,11 @@ class ESMCTrainer():
                     eval_bar += self.eval_every_i
                 
 
-                self.logger.info(LogLine(batch=global_batch_idx,
-                                    i = global_batch_idx * self.batch_size,
-                                    val_loss=val_loss))
+                    self.logger.info(LogLine(batch=global_batch_idx,
+                                        i = global_batch_idx * self.batch_size,
+                                        val_loss=val_loss))
 
-                print(f"i: {self.batch_size*global_batch_idx},  val loss: {val_loss}")
+                    print(f"i: {i},  val loss: {val_loss}")
 
                 torch.cuda.empty_cache()
 
