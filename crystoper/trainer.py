@@ -67,7 +67,7 @@ class ESMCTrainer():
                             load_log(self.log_path)['train_loss']['batch'].max()
         
         example = load_example()
-        eval_bar = eval_every_i
+        eval_bar = self.eval_every_i
         
         #itterate the shard train files and train on each one of them
         for shard_file_index, (data_train_shard, path) in enumerate(load_shard_vectors(self.train_folder), ):
