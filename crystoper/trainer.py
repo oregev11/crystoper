@@ -27,7 +27,9 @@ def train_test_val_toy_split(df, test_size, val_size):
     return train_df, test_df, val_df, toy_df
 
 class ESMCTrainer():
-    def __init__(self, session_name, esm_model, train_folder, val_folder, batch_size, loss_fn, optimizer, shuffle, cpu, start_from_shard=0, backup_mid_epoch=False):
+    def __init__(self, session_name, esm_model, train_folder, val_folder, batch_size,
+                 loss_fn, optimizer, shuffle, cpu, start_from_shard=0, backup_mid_epoch=False,
+                 eval_every_i=25000):
 
         self.session_name = session_name
         self.esm_model = esm_model
@@ -43,6 +45,7 @@ class ESMCTrainer():
                         else 'cpu'
         self.start_from_shard = start_from_shard
         self.backup_mid_epoch = backup_mid_epoch
+        self.eval_every_i = eval_every_i
         
         self.output_folder = join(config.checkpoints_path, session_name)
         makedirs(self.output_folder, exist_ok=True)
@@ -64,7 +67,8 @@ class ESMCTrainer():
                             load_log(self.log_path)['train_loss']['batch'].max()
         
         example = load_example()
-                            
+        eval_bar = eval_every_i
+        
         #itterate the shard train files and train on each one of them
         for shard_file_index, (data_train_shard, path) in enumerate(load_shard_vectors(self.train_folder), ):
 
@@ -84,15 +88,17 @@ class ESMCTrainer():
                 self.bart_model.to('cpu')
 
                 print(f'Finished file {shard_file_index} from train data. predicted: {pred}')
-
+                i =  global_batch_idx * self.batch_size
                 self.logger.info(LogLine(batch=global_batch_idx,
-                                    i = global_batch_idx * self.batch_size,
+                                    i = i,
                                     pred_sent = pred))
 
                 print('Evaluating val loss...')
 
-                #perform validation (done after each shard file of the training)
-                val_loss = evaluate_model(self.esm_model, self.esm_tokenizer, self.val_folder, self.batch_size, self.loss_fn, self.device, self.shuffle)
+                #perform validation (after reaching eval_every_i instances)
+                if i > eval_bar:
+                    val_loss = evaluate_model(self.esm_model, self.esm_tokenizer, self.val_folder, self.batch_size, self.loss_fn, self.device, self.shuffle)
+                    eval_bar += self.eval_every_i
                 
 
                 self.logger.info(LogLine(batch=global_batch_idx,
