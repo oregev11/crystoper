@@ -83,29 +83,32 @@ class ESMCTrainer():
                 global_batch_idx, last_loss = train_model(self.esm_model, train_loader, self.loss_fn,
                                                         self.optimizer, global_batch_idx, self.batch_size,
                                                         self.logger, self.device)
-                self.bart_model.to(self.device)
-                pred = seq2sent(example["sequence"], self.esm_model, self.esm_tokenizer, self.bart_model, self.bart_tokenizer, ac=True)
-                self.bart_model.to('cpu')
-
-                print(f'Finished file {shard_file_index} from train data. predicted: {pred}')
+                
+                print(f'Finished file {shard_file_index} from train data.')
                 i =  global_batch_idx * self.batch_size
                 self.logger.info(LogLine(batch=global_batch_idx,
                                     i = i,
                                     pred_sent = pred))
 
-                print('Evaluating val loss...')
-
                 #perform validation (after reaching eval_every_i instances)
                 if i > eval_bar:
+                    print('Evaluating val loss...')
                     val_loss = evaluate_model(self.esm_model, self.esm_tokenizer, self.val_folder, self.batch_size, self.loss_fn, self.device, self.shuffle)
-                    eval_bar += self.eval_every_i
+                    
+                    torch.cuda.empty_cache()
+                    self.bart_model.to(self.device)
+                    pred = seq2sent(example["sequence"], self.esm_model, self.esm_tokenizer, self.bart_model, self.bart_tokenizer, ac=True)
+                    self.bart_model.to('cpu')
                 
 
                     self.logger.info(LogLine(batch=global_batch_idx,
                                         i = global_batch_idx * self.batch_size,
-                                        val_loss=val_loss))
+                                        val_loss=val_loss,
+                                        pred_sent=pred))
 
                     print(f"i: {i},  val loss: {val_loss}")
+                    
+                    eval_bar += self.eval_every_i
 
                 torch.cuda.empty_cache()
 
