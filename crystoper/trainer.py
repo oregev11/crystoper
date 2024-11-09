@@ -85,11 +85,9 @@ class ESMCTrainer():
                                                         self.logger, self.device)
                 
                 print(f'Finished file {shard_file_index} from train data.')
+                
                 i =  global_batch_idx * self.batch_size
-                self.logger.info(LogLine(batch=global_batch_idx,
-                                    i = i,
-                                    pred_sent = pred))
-
+                
                 #perform validation (after reaching eval_every_i instances)
                 if i > eval_bar:
                     print('Evaluating val loss...')
