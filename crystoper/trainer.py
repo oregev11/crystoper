@@ -106,7 +106,7 @@ class ESMCTrainer():
                                         val_loss=val_loss,
                                         pred_sent=pred))
 
-                    print(f"i: {i},  val loss: {val_loss}")
+                    print(f"\n**********************i: {i},  val loss: {val_loss}\n***********************\n")
                     
                     eval_bar += self.eval_every_i
 
