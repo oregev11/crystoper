@@ -13,7 +13,7 @@ import torch.optim as optim
 
 from crystoper import config
 from crystoper.processor import filter_by_pdbx_details_length, filter_for_single_entities
-from crystoper.utils.general import vprint
+from crystoper.utils.general import vprint, make_parent_dirs
 from crystoper.esmc_models import ESMCcomplex
 from crystoper.trainer import ESMCTrainer
 
@@ -118,13 +118,16 @@ def main():
         
         trainer.single_epoch_train()
         
-        #dump the model after the end of all epochs
-        if args.save_last_only:
-            model_path = join(join(config.checkpoints_path, args.session_name), args.session_name + '.pkl')
-            print(f'Dumping model to {model_path}...')
-            torch.save(esm_model, model_path)
-            print(f'Saved model to {model_path}')
-            
+    #dump the model after the end of all epochs
+    if args.save_last_only:
+        output_folder = join(config.checkpoints_path, args.session_name)
+        model_path = join(output_folder, args.session_name + '.pkl')
+        make_parent_dirs(model_path)
+                
+        print(f'Dumping model to {model_path}...')
+        torch.save(esm_model, model_path)
+        print(f'Saved model to {model_path}')
+        
             
 
 
