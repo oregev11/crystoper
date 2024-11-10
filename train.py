@@ -121,7 +121,7 @@ def main():
     #dump the model after the end of all epochs
     if args.save_last_only:
         output_folder = join(config.checkpoints_path, args.session_name)
-        model_path = join(output_folder, args.session_name + '.pkl')
+        model_path = join(output_folder, args.session_name + f'_e{epoch}.pkl')
         make_parent_dirs(model_path)
                 
         print(f'Dumping model to {model_path}...')
