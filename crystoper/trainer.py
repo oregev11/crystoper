@@ -28,7 +28,7 @@ def train_test_val_toy_split(df, test_size, val_size):
 
 class ESMCTrainer():
     def __init__(self, session_name, esm_model, train_folder, val_folder, batch_size,
-                 loss_fn, optimizer, shuffle, cpu, start_from_shard=0, backup_mid_epoch=False,
+                 loss_fn, optimizer, shuffle, cpu, start_from_shard=0, backup_mid_epoch=False, backup_end_epoch=True,
                  eval_every_i=25000):
 
         self.session_name = session_name
@@ -45,6 +45,7 @@ class ESMCTrainer():
                         else 'cpu'
         self.start_from_shard = start_from_shard
         self.backup_mid_epoch = backup_mid_epoch
+        self.backup_end_epoch = backup_end_epoch
         self.eval_every_i = eval_every_i
         
         self.output_folder = join(config.checkpoints_path, session_name)
@@ -119,11 +120,12 @@ class ESMCTrainer():
                     self.logger.dump()
 
         #dump final model
-        model_path = join(self.output_folder, self.session_name + '.pkl')
-        print(f'Dumping model to {model_path}...')
-        torch.save(self.esm_model, model_path)
-        print(f'Saved model to {model_path}')
-        self.logger.dump()
+        if self.backup_end_epoch:
+            model_path = join(self.output_folder, self.session_name + '.pkl')
+            print(f'Dumping model to {model_path}...')
+            torch.save(self.esm_model, model_path)
+            print(f'Saved model to {model_path}')
+            self.logger.dump()
 
 
         print('DONE!')

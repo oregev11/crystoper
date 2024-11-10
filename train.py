@@ -45,6 +45,9 @@ def parse_args():
                         help='backup the model in the middle of the epoch after each train shard file')
     parser.add_argument('--toy-train', action='store_true',
                         help='use toy data for training for debug purposes')
+    parser.add_argument('--save-last-only', action='store_true',
+                        help='save only the last checkpoint after the last epoch. (if not using toy train it is best to save after each epoch to avoid losing the trained model)')
+    
     
     
     args = parser.parse_args()
@@ -110,9 +113,18 @@ def main():
                               shuffle=args.shuffle,
                               cpu=args.cpu,
                               start_from_shard=start_from_shard,
-                              backup_mid_epoch=args.backup_mid_epoch)
+                              backup_mid_epoch=args.backup_mid_epoch,
+                              backup_end_epoch=(not args.save_last_only))
         
         trainer.single_epoch_train()
+        
+        #dump the model after the end of all epochs
+        if args.save_last_only:
+            model_path = join(args.output_folder, args.session_name + '.pkl')
+            print(f'Dumping model to {model_path}...')
+            torch.save(esm_model, model_path)
+            print(f'Saved model to {model_path}')
+            
             
 
 
