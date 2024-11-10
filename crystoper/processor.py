@@ -31,6 +31,8 @@ def preprocess_pdb_data(input_path, output_path,
     
     df = standardize_crystal_method(df)
     
+    df.pdbx_details = df.pdbx_details.replace('\n', ' ')
+
     print_missing_report(df)
     
     #reorder    
@@ -43,6 +45,8 @@ def filter_pdb_data(df,
                     filter_non_proteins,
                     chains_per_entry,
                     filter_empty_details,
+                    minimum_details_length,
+                    maximum_details_length,
                     **kwargs):
 
     #save original lengths for later printings
@@ -90,9 +94,12 @@ def filter_pdb_data(df,
         df_entries = df_entries.query('pdbx_details.notna()')
         
         vprint(f'{n_entries - len(df_entries)} entries with no "pdbx_details" were removed!')
-            
+        
+                
     #re-merge data (it will be filtered according to the entries left in df_entries due to left merge)
     df = df_entries.merge(df_pe, how='left')
+    
+    df = filter_by_pdbx_details_length(df, minimum_details_length, maximum_details_length)
     
     vprint("\n\nTotal filtered values:")
     
@@ -235,4 +242,15 @@ def standardize_crystal_method(df):
     
     df['crystal_method'] = df['crystal_method'].fillna('').apply(process_crystal_method)
     
+    return df
+
+def filter_for_single_entities(df):
+    count = df.groupby('pdb_id').size().reset_index()
+    singles = set(count[count[0]==1].pdb_id.values)
+    df = df[df.pdb_id.isin(singles)]
+    
+    return df
+
+def filter_by_pdbx_details_length(df, min_len, max_len):
+    df = df[df.pdbx_details.str.len().between(min_len,max_len)]
     return df
