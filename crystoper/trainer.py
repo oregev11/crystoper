@@ -119,7 +119,7 @@ class ESMCTrainer():
                     print(f'Saved model to {model_path}')
                     self.logger.dump()
             
-            del data_train
+            del data_train_shard
             torch.cuda.empty_cache()
             
         #dump final model
