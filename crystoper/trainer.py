@@ -118,7 +118,10 @@ class ESMCTrainer():
                     torch.save(self.esm_model, model_path)
                     print(f'Saved model to {model_path}')
                     self.logger.dump()
-
+            
+            del data_train
+            torch.cuda.empty_cache()
+            
         #dump final model
         if self.backup_end_epoch:
             model_path = join(self.output_folder, self.session_name + '.pkl')
