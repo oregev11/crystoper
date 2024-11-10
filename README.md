@@ -1,7 +1,6 @@
 # crystoper - Crystallization Conditions Predictor  
 crystoper is a tool for predicting diffracting crystallization conditions for proteins based on their sequence.
-Current version (0.1) only implements:
-1. downloading entries and poly-entities data as *.json files from the PDB.
+Current version (0.1) and poly-entities data as *.json files from the PDB.
 2. Parsing and processing the data into csv file.
 3. Training an ESM and BART based model to predict crystallization conditions based on the PDB data.
 4. Using our trained model (called ESMCcomplex) to predict crystallization conditions for sequences.
