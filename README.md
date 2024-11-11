@@ -30,13 +30,19 @@ The updated list of all instances in the PDB can be downloaded from https://data
 The json files contains the sequences of all peptide chains used in a crystallography assay. **Yet - The exact reagents and used in the assay solution and their concentrations are given as a free text. We wish to train a model that given a protein sequences can predict the proper crystallization conditions.**
 
 # The ESMC models
+We called our model `ESM-Crystoper` or in short `ESMC`.
+We tried 3 models with slightly different architectures we named: `EMSC`, `EMSCavg` and `ESMCcomplex`. ('ESMCcomplex' gave the best results).
+
 Our ESMC models try to utilize transfer learning from two langue models:
 1. BART- [https://arxiv.org/abs/1910.13461]
 2. ESM - [https://github.com/facebookresearch/esm]
 BART is a denoising autoencoder for pretraining sequence-to-sequence models. BART, a generalization of BERT has a bi-directional encoder. This means that given a sentence in english, we can use BART encoder to encode it into a vector. We can than use BART decoder to get the original sentence.
 ESM is a protein-language transformer-based model. It was successfully used to predict various protein traits based on their primary sequence.
 
-Here we tried 3 models we called EMSC (`EMSC`, `EMSCavg` and `ESMCcomplex`) , we try to predict the decoded BART representation of the crystallization assay based on the protein sequence. 
+Our features space is the protein seqeunce.
+
+Our labels are the BART-decoded assay conditions that are given as free text in the PDB data.
+
 We changed the ESM architecture by adding layers (Additional Layers:  Dropout (0.2) > linear1 (1280 → 1024) > (1024 → 500x768) >  activation > normalization). During training, the original ESM weights are frozen so only the added layers are trained. 
 The model ESMCcomplex output is a 250x768 matrix. 
 During training we try to minimize the loss relative to the 250x768 BART encoding of the crystallography assay conditions.
