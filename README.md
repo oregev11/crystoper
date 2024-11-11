@@ -1,22 +1,28 @@
 # Crystoper - Crystallization Conditions Predictor  
 The `crystoper` repository is aimed for predicting diffracting crystallization conditions for proteins based on their sequence. It demonstrate a scalable approach for model training and development.
+
 Current version (0.1) implements:
 1. downloading entries and poly-entities data as *.json files from the PDB.
 2. Parsing and processing the data into csv file.
-3. Training an ESM and BART based model to predict crystallization conditions based on the PDB data.
+3. Use transfet learning and train an ESM and BART based model to predict crystallization conditions from the protein seqeunce.
 4. Using our trained model (called `ESMCcomplex`) to predict crystallization conditions for sequences.
 
 NOTE: Our model, `ESMCcomplex` Was trained on ~113K instances for 20 epochs and did not converge. A better architecture of the model  may very likely result in better performance. We hope to provide such a model in the near future. Nevertheless, this repo is a great basis for (1) acquiring the PDB data and (2) training a better model. ENJOY!
 
-# Background
+# Biochemical Background
 Crystallography is the golden standard for accurately determining a protein 3D structure.
-The process has 4 main steps:
-1. purification - purifying the protein in high quantity.
+The process can be devided into 4 main steps:
+1. purification - purifying the protein.
 2. crystallization - producing crystals of the protein.
 3. X-RAY diffraction - omitting x-ray radiation on the crystals and monitor the diffraction.
-4. solving the proteins structure based onf the diffraction pattern.
+4. Structure solving - solving the proteins structure based onf the diffraction pattern.
 
-This work focuses on step 2 - **finding the proper crystallization conditions**
+This work focuses on step 2 - **finding the proper crystallization conditions for a protein based on its primary sequence**
+
+# Our Approach
+The biochemiacl proerties of proteins are dervied almost exclusively from the protein primary seqeunce. Many models that try to predict various protien features based on their sequence (2D/3D fold, enzimatic activity, interacting proteins) exists. The proper assay conditions for a protein to form diffracting crystals can be viewed as a property derived from the protein sequence.
+
+Here we tried to harnse the embedding power of a protein languge model (ESM) and natural languge model (BART) to train a model that can predict proper crystalization conditions based on the protein seqeunce.
 
 # Datasets
 Data was taken from PDB (Protein Data Bank, https://www.rcsb.org/).
@@ -30,7 +36,7 @@ Our ESMC models try to utilize transfer learning from two langue models:
 BART is a denoising autoencoder for pretraining sequence-to-sequence models. BART, a generalization of BERT has a bi-directional encoder. This means that given a sentence in english, we can use BART encoder to encode it into a vector. We can than use BART decoder to get the original sentence.
 ESM is a protein-language transformer-based model. It was successfully used to predict various protein traits based on their primary sequence.
 
-In the ESMC models, we try to predict the decoded BART representation of the crystallization assay based on the protein sequence. 
+Here we tried 3 models we called EMSC (`EMSC`, `EMSCavg` and `ESMCcomplex`) , we try to predict the decoded BART representation of the crystallization assay based on the protein sequence. 
 We changed the ESM architecture by adding layers (Additional Layers:  Dropout (0.2) > linear1 (1280 → 1024) > (1024 → 500x768) >  activation > normalization). During training, the original ESM weights are frozen so only the added layers are trained. 
 The model ESMCcomplex output is a 250x768 matrix. 
 During training we try to minimize the loss relative to the 250x768 BART encoding of the crystallography assay conditions.
