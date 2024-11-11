@@ -1,6 +1,5 @@
 # Crystoper - Crystallization Conditions Predictor  
-The `crystoper` repository is aimed for predicting **diffracting crystallization conditions for proteins based on their sequence**. 
-It also demonstrate a scalable approach for model training and development.
+The crystoper repository is designed to predict crystallization conditions for proteins based on their sequence. It also showcases a scalable approach for training and developing ML models.
 
 Current version (0.1) implements:
 1. downloading entries and poly-entities data as *.json files from the PDB.
