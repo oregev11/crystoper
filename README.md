@@ -36,6 +36,7 @@ We tried 3 models with slightly different architectures we named: `EMSC`, `EMSCa
 Our ESMC models try to utilize transfer learning from two langue models:
 1. BART- [https://arxiv.org/abs/1910.13461]
 2. ESM - [https://github.com/facebookresearch/esm]
+
 BART is a denoising autoencoder for pretraining sequence-to-sequence models. BART, a generalization of BERT has a bi-directional encoder. This means that given a sentence in english, we can use BART encoder to encode it into a vector. We can than use BART decoder to get the original sentence.
 ESM is a protein-language transformer-based model. It was successfully used to predict various protein traits based on their primary sequence.
 
