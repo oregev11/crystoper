@@ -12,8 +12,8 @@ NOTE: Our model, `ESMCcomplex` Was trained on ~113K instances for 15 epochs and 
 # Biochemical Background
 Crystallography is the golden standard for accurately determining a protein 3D structure.
 The process can be divided into 4 main steps:
-1. purification - purifying the protein.
-2. crystallization - producing crystals of the protein.
+1. Purification - purifying the protein.
+2. Crystallization - producing crystals of the protein.
 3. X-RAY diffraction - omitting x-ray radiation on the crystals and monitor the diffraction.
 4. Structure solving - solving the proteins structure based onf the diffraction pattern.
 
