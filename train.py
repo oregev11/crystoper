@@ -4,6 +4,7 @@ train model
 """
 import argparse
 from os.path import join
+from os import makedirs
 from pathlib import Path
 import re 
 import torch
@@ -14,6 +15,7 @@ import torch.optim as optim
 from crystoper import config
 from crystoper.processor import filter_by_pdbx_details_length, filter_for_single_entities
 from crystoper.utils.general import vprint, make_parent_dirs
+from crystoper.utils.data import dump_json
 from crystoper.esmc_models import ESMCcomplex
 from crystoper.trainer import ESMCTrainer
 
@@ -73,6 +75,11 @@ def main():
     next_epoch = 1
     start_from_shard = args.start_from_shard
     
+    output_folder = join(config.checkpoints_path, args.session_name)
+    params_path = join(output_folder, 'params.json')
+    make_parent_dirs(params_path)
+    dump_json(vars(args), params_path)
+    
     #If checkpoint was passed, parse the epoch number from the name (name should look like: 'esmccomplex_singles_113K_e3.pkl' meaning the model was traind for 3 epochs)
     #If the passed checkpoint was from incomplete epoch, it should look like 'esmccomplex_singles_113K_e3_trainfile2.pkl' meaning the model is from epoch 3 trained on trainfiles 0, 1 and 2. 
     #training will continue the session from on the rest of the train files
@@ -120,7 +127,6 @@ def main():
         
     #dump the model after the end of all epochs
     if args.save_last_only:
-        output_folder = join(config.checkpoints_path, args.session_name)
         model_path = join(output_folder, args.session_name + f'_e{epoch}.pkl')
         make_parent_dirs(model_path)
                 
