@@ -7,7 +7,7 @@ Current version (0.1) implements:
 3. Use transfer learning and train an ESM and BART based model to predict crystallization conditions from the protein sequence.
 4. Using our trained model (called `ESMCcomplex`) to predict crystallization conditions for sequences.
 
-** NOTE: The deveopment this repo and the training of the model `ESMCcomplex` (deposited in `https://huggingface.co/oregev11/ESMCcomplex`) is still in progress. **
+**DO NOTE: The deveopment this repo and the training of the model `ESMCcomplex` (deposited in `https://huggingface.co/oregev11/ESMCcomplex`) is still in progress.**
 
 # Biochemical Background
 Crystallography is the golden standard for accurately determining a protein 3D structure.
