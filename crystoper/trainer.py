@@ -27,10 +27,11 @@ def train_test_val_toy_split(df, test_size, val_size):
     return train_df, test_df, val_df, toy_df
 
 class ESMCTrainer():
-    def __init__(self, session_name, esm_model, train_folder, val_folder, batch_size,
+    def __init__(self,epoch, session_name, esm_model, train_folder, val_folder, batch_size,
                  loss_fn, optimizer, shuffle, cpu, start_from_shard=0, backup_mid_epoch=False, backup_end_epoch=True,
                  eval_every_i=25000):
-
+        
+        self.epoch = epoch
         self.session_name = session_name
         self.esm_model = esm_model
         self.esm_tokenizer = EsmTokenizer.from_pretrained("facebook/esm2_t33_650M_UR50D")
@@ -113,10 +114,15 @@ class ESMCTrainer():
 
                 if self.backup_mid_epoch:
                     #dump model (dump after each shard file as a backup incase of connection loss)
-                    model_path = join(self.output_folder, self.session_name + f'_trainfile{shard_file_index}.pkl')
-                    print(f'Dumping model to {model_path}...')
-                    torch.save(self.esm_model, model_path)
-                    print(f'Saved model to {model_path}')
+                    checkpoint_path = join(self.output_folder, self.session_name + f'_trainfile{shard_file_index}.pth')
+                    print(f'Dumping model to {checkpoint_path}...')
+                    torch.save({
+                        'model_state_dict': self.esm_model.state_dict(),
+                        'optimizer_state_dict': self.optimizer.state_dict(),
+                        'epoch': self.epoch,
+                        'loss_fn': self.loss_fn,
+                    }, checkpoint_path)
+                    print(f'Saved model to {checkpoint_path}')
                     self.logger.dump()
             
             del data_train_shard
@@ -124,10 +130,15 @@ class ESMCTrainer():
             
         #dump final model
         if self.backup_end_epoch:
-            model_path = join(self.output_folder, self.session_name + '.pkl')
-            print(f'Dumping model to {model_path}...')
-            torch.save(self.esm_model, model_path)
-            print(f'Saved model to {model_path}')
+            checkpoint_path = join(self.output_folder, self.session_name + '.pth')
+            print(f'Dumping model to {checkpoint_path}...')
+            torch.save({
+                        'model_state_dict': self.esm_model.state_dict(),
+                        'optimizer_state_dict': self.optimizer.state_dict(),
+                        'epoch': self.epoch,
+                        'loss_fn': self.loss_fn,
+                    }, checkpoint_path)
+            print(f'Saved model to {checkpoint_path}')
             self.logger.dump()
 
 
@@ -317,5 +328,30 @@ class LogLine():
     def __repr__(self):
         return str(self.d)
 
+def load_train_and_val_loss_from_logs_folder(path, prefix='esmccomplex_singles_113K'):
+    train_loss = pd.DataFrame()
+    val_loss = pd.DataFrame()
 
+    for i in tqdm(range(1, 100)):
+        name = f'{prefix}_e{i}'
+        log_path = join(path, name + '.txt')
+        log = load_log(log_path)
+
+        temp_train_loss = pd.DataFrame(log['train_loss'])
+        temp_val_loss = pd.DataFrame(log['val_loss'])
+
+        temp_train_loss['epoch'] = int(i)
+        temp_val_loss['epoch'] = int(i)
+
+
+        train_loss = pd.concat([train_loss, temp_train_loss])
+        val_loss = pd.concat([val_loss, temp_val_loss])
+        
+    df1 = train_loss.groupby('epoch')['train_loss'].mean()
+    df2 = val_loss.groupby('epoch')['val_loss'].mean()
+    summary = pd.concat([df1, df2], axis=1).reset_index()
+
+    print(f"train loss over epochs was: \n{summary.to_string()}")
+    
+    return train_loss, val_loss
 
