@@ -146,7 +146,7 @@ def main():
         trainer.single_epoch_train()
         
         #
-        _ = load_train_and_val_loss_from_logs_folder(output_folder, prefix=base_session_name)
+        _ = load_train_and_val_loss_from_logs_folder(base_session_name + f'_e{epoch}', prefix=base_session_name)
         
     #dump the model after the end of all epochs
     if args.save_last_only:
