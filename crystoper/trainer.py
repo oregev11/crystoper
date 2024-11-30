@@ -164,6 +164,7 @@ def train_model(model, train_loader,
                 device, verbose=True):
     
     model.to(device)
+    print(f"loaded model to: {device}")
 
     model.train()  # Set model to training mode
     running_train_loss = 0.0
