@@ -61,15 +61,15 @@ def main():
 
     args = parse_args()
     
-    if args.model == 'esmc-complex':
-        esm_model = ESMCcomplex()
-        vprint(f"A fresh {args.model} has been created!")
-    else:
-        raise ValueError('Model cannot be resolved')
-    
     if args.device == 'cuda' and not torch.cuda.is_available():
         raise ValueError('CUDA is not available. please pass device "cpu"')
     
+    if args.model == 'esmc-complex':
+        esm_model = ESMCcomplex().to(args.device)
+        vprint(f"A fresh {args.model} has been created!")
+    else:
+        raise ValueError('Model cannot be resolved')
+        
     loss_fn = nn.MSELoss()
     optimizer = optim.Adam(esm_model.parameters(), lr=args.learning_rate)
     epoch = 1
