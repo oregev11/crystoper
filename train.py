@@ -71,7 +71,7 @@ def main():
         raise ValueError('Model cannot be resolved')
         
     
-        
+    optimizer = optim.Adam(esm_model.parameters(), lr=args.learning_rate)
     
     if args.checkpoint:
         checkpoint = torch.load(args.checkpoint)
@@ -90,7 +90,7 @@ def main():
             param_group['lr'] = args.learning_rate
         
     else:
-        optimizer = optim.Adam(esm_model.parameters(), lr=args.learning_rate)
+        
         loss_fn = nn.MSELoss()
         epoch = 1
         session_name = args.session_name
