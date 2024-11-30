@@ -124,7 +124,7 @@ def main():
         trainer.single_epoch_train()
         
         #
-        summary = load_train_and_val_loss_from_logs_folder(output_folder, prefix=session_name)
+        _, _, summary = load_train_and_val_loss_from_logs_folder(output_folder, prefix=session_name)
         summary.to_csv(join(output_folder, 'summary.csv'), index=False)
         
         
