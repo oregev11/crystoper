@@ -28,7 +28,7 @@ def train_test_val_toy_split(df, test_size, val_size):
 
 class ESMCTrainer():
     def __init__(self,epoch, session_name, esm_model, train_folder, val_folder, batch_size,
-                 loss_fn, optimizer, shuffle, cpu, start_from_shard=0, backup_mid_epoch=False, backup_end_epoch=True,
+                 loss_fn, optimizer, shuffle, device, start_from_shard=0, backup_mid_epoch=False, backup_end_epoch=True,
                  eval_every_i=25000):
         
         self.epoch = epoch
@@ -41,9 +41,7 @@ class ESMCTrainer():
         self.loss_fn = loss_fn
         self.optimizer = optimizer
         self.shuffle=shuffle
-        self.device = 'cpu' if cpu \
-                    else 'cuda' if torch.cuda.is_available()\
-                        else 'cpu'
+        self.device = device
         self.start_from_shard = start_from_shard
         self.backup_mid_epoch = backup_mid_epoch
         self.backup_end_epoch = backup_end_epoch

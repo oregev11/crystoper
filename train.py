@@ -38,8 +38,8 @@ def parse_args():
                         help='learning rate'),
     parser.add_argument('--shuffle', action='store_true',
                         help='shuffle instances in train')
-    parser.add_argument('--cpu', action='store_true',
-                        help='Force cpu usage')
+    parser.add_argument('--device', type=str, default='cuda',
+                        help='device to use. "cuda" or "cpu"')
     parser.add_argument('-st', '--start-from-shard', type=int, default=0,
                         help='index of shard train file to start from .default is 0. if run was crushed during epoch, you can start from the middle of epoch\
                             by starting from the last loaded train shard file.')
@@ -67,6 +67,9 @@ def main():
     else:
         raise ValueError('Model cannot be resolved')
     
+    if args.device == 'cuda' and not torch.cuda.is_available():
+        raise ValueError('CUDA is not available. please pass device "cpu"')
+    
     loss_fn = nn.MSELoss()
     optimizer = optim.Adam(esm_model.parameters(), lr=args.learning_rate)
     epoch = 1
@@ -82,8 +85,8 @@ def main():
         vprint(f"loaded previous model from checkpoint {args.checkpoint}")
         
         #update learning rate
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = args.learning_rate
+        # for param_group in optimizer.param_groups:
+        #     param_group['lr'] = args.learning_rate
         
     else:
         loss_fn = nn.MSELoss()
@@ -138,7 +141,7 @@ def main():
                               loss_fn = loss_fn,
                               optimizer=optimizer,
                               shuffle=args.shuffle,
-                              cpu=args.cpu,
+                              device=args.device,
                               start_from_shard=start_from_shard,
                               backup_mid_epoch=args.backup_mid_epoch,
                               backup_end_epoch=(not args.save_last_only))
