@@ -353,5 +353,5 @@ def load_train_and_val_loss_from_logs_folder(path, prefix='esmccomplex_singles_1
 
     print(f"train loss over epochs was: \n{summary.to_string()}")
     
-    return summary
+    return train_loss, val_loss, summary
 
