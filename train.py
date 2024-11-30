@@ -70,86 +70,63 @@ def main():
     else:
         raise ValueError('Model cannot be resolved')
         
-    loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(esm_model.parameters(), lr=args.learning_rate)
-    epoch = 1
     
+        
     
     if args.checkpoint:
         checkpoint = torch.load(args.checkpoint)
         esm_model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        epoch = checkpoint['epoch']
         loss_fn = checkpoint['loss_fn']
+        prev_epoch = checkpoint['epoch']
+        session_name = checkpoint['session_name']
+        
+        epoch = prev_epoch + 1
                 
         vprint(f"loaded previous model from checkpoint {args.checkpoint}")
         
         #update learning rate
-        # for param_group in optimizer.param_groups:
-        #     param_group['lr'] = args.learning_rate
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = args.learning_rate
         
     else:
-        loss_fn = nn.MSELoss()
         optimizer = optim.Adam(esm_model.parameters(), lr=args.learning_rate)
-           
-    
-    start_from_shard = args.start_from_shard
-    
-    output_folder = join(config.checkpoints_path, args.session_name)
-    params_path = join(output_folder, 'params.json')
-    make_parent_dirs(params_path)
-    dump_json(vars(args), params_path)
-    
-    #If checkpoint was passed, parse the epoch number from the name (name should look like: 'esmccomplex_singles_113K_e3.pkl' meaning the model was traind for 3 epochs)
-    #If the passed checkpoint was from incomplete epoch, it should look like 'esmccomplex_singles_113K_e3_trainfile2.pkl' meaning the model is from epoch 3 trained on trainfiles 0, 1 and 2. 
-    #training will continue the session from on the rest of the train files
-    if args.checkpoint:
-        #if last epoch was incomplete
-        if 'trainfile' in args.checkpoint:
-            last_train_file = get_last_train_file_from_checkpoint(args.checkpoint)
-            print(f'Last train file for checkpoint was: {last_train_file}')
-            
-            start_from_shard = last_train_file + 1
-            print(f'Starting current train from train file: {start_from_shard}')
-            
-            base_session_name = get_session_name_from_checkpoint(args.checkpoint, is_trainfile=True)
-            
-            #if this is a trainfile epoch (mid-epoch checkpoint) we start from the same epoch
-            prev_epoch = epoch
-            next_epoch = epoch
-            print(f'Train will continue the previous epoch: epoch {next_epoch}')
-            
-        else:
-            prev_epoch = epoch
-            next_epoch = prev_epoch + 1
-            base_session_name = get_session_name_from_checkpoint(args.checkpoint)
-            
-    else:
-        base_session_name = args.session_name
-        next_epoch = 1
-    
-    for epoch in range(next_epoch, next_epoch + args.n_epochs):
+        loss_fn = nn.MSELoss()
+        epoch = 1
+        session_name = args.session_name
         
-        vprint(f'\n\n*************************\nStarting Epoch {epoch} (out of {next_epoch + args.n_epochs})!\n***********************\n\n')
+            
+    last_epoch = epoch + args.n_epochs - 1 #the last epoch to be in current run     
+    
+    for epoch in range(epoch, last_epoch + 1):
+        
+        output_folder = join(config.checkpoints_path, session_name + f'_e{epoch}')
+        params_path = join(output_folder, 'params.json')
+        make_parent_dirs(params_path)
+        dump_json(vars(args), params_path)
+        
+        vprint(f'\n\n*************************\nStarting Epoch {epoch} (out of {last_epoch})!\n***********************\n\n')
         
         trainer = ESMCTrainer(epoch=epoch,
-                              session_name=base_session_name + f'_e{epoch}',
+                              session_name=session_name,
                               esm_model=esm_model,
                               train_folder=join(config.details_vectors_path, 'toy' if args.toy_train else 'train'),
                               val_folder=join(config.details_vectors_path, 'toy' if args.toy_train else 'val'),
                               batch_size=args.batch_size,
-                              loss_fn = loss_fn,
+                              loss_fn=loss_fn,
                               optimizer=optimizer,
                               shuffle=args.shuffle,
                               device=args.device,
-                              start_from_shard=start_from_shard,
+                              start_from_shard=0,
                               backup_mid_epoch=args.backup_mid_epoch,
                               backup_end_epoch=(not args.save_last_only))
         
         trainer.single_epoch_train()
         
         #
-        _ = load_train_and_val_loss_from_logs_folder(base_session_name + f'_e{epoch}', prefix=base_session_name)
+        summary = load_train_and_val_loss_from_logs_folder(output_folder, prefix=session_name)
+        summary.to_csv(join(output_folder, 'summary.csv'), index=False)
+        
         
     #dump the model after the end of all epochs
     if args.save_last_only:
@@ -162,6 +139,7 @@ def main():
                 'optimizer_state_dict': optimizer.state_dict(),
                 'epoch': epoch,
                 'loss_fn': loss_fn,
+                'session_name': session_name,
             }, checkpoint_path)
         print(f'Saved model to {checkpoint_path}')
         

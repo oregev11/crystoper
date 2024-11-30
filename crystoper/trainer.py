@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast
 
 from transformers import EsmTokenizer, BartTokenizer, BartModel, BartForConditionalGeneration
-
+import ast
 
 from . import config
 from .bart import bart_decode
@@ -47,10 +47,10 @@ class ESMCTrainer():
         self.backup_end_epoch = backup_end_epoch
         self.eval_every_i = eval_every_i
         
-        self.output_folder = join(config.checkpoints_path, session_name)
+        self.output_folder = join(config.checkpoints_path, session_name + f'_e{epoch}' )
         makedirs(self.output_folder, exist_ok=True)
         
-        self.log_path = join(self.output_folder, self.session_name + '.txt')
+        self.log_path = join(self.output_folder, self.session_name + f'_e{self.epoch}.txt')
         self.logger = SimpleLogger(self.log_path, overwrite=self.start_from_shard == 0)
         
         self.bart_tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
@@ -119,6 +119,7 @@ class ESMCTrainer():
                         'optimizer_state_dict': self.optimizer.state_dict(),
                         'epoch': self.epoch,
                         'loss_fn': self.loss_fn,
+                        'session_name' : self.session_name
                     }, checkpoint_path)
                     print(f'Saved model to {checkpoint_path}')
                     self.logger.dump()
@@ -128,13 +129,14 @@ class ESMCTrainer():
             
         #dump final model
         if self.backup_end_epoch:
-            checkpoint_path = join(self.output_folder, self.session_name + '.pth')
+            checkpoint_path = join(self.output_folder, self.session_name + f'_e{self.epoch}.pth')
             print(f'Dumping model to {checkpoint_path}...')
             torch.save({
                         'model_state_dict': self.esm_model.state_dict(),
                         'optimizer_state_dict': self.optimizer.state_dict(),
                         'epoch': self.epoch,
                         'loss_fn': self.loss_fn,
+                        'session_name': self.session_name,
                     }, checkpoint_path)
             print(f'Saved model to {checkpoint_path}')
             self.logger.dump()
@@ -331,16 +333,15 @@ def load_train_and_val_loss_from_logs_folder(path, prefix='esmccomplex_singles_1
     train_loss = pd.DataFrame()
     val_loss = pd.DataFrame()
 
-    for i in tqdm(range(1, 100)):
-        name = f'{prefix}_e{i}'
-        log_path = join(path, name + '.txt')
+    for log_path in glob(join(path, prefix + '_e*.txt')):
         log = load_log(log_path)
 
         temp_train_loss = pd.DataFrame(log['train_loss'])
         temp_val_loss = pd.DataFrame(log['val_loss'])
-
-        temp_train_loss['epoch'] = int(i)
-        temp_val_loss['epoch'] = int(i)
+        #grab i. assume a folder1/folder2..../PREFIX_eI.txt format
+        i = int(log_path.split('_')[-1][1:-4])
+        temp_train_loss['epoch'] = i
+        temp_val_loss['epoch'] = i
 
 
         train_loss = pd.concat([train_loss, temp_train_loss])
@@ -352,5 +353,5 @@ def load_train_and_val_loss_from_logs_folder(path, prefix='esmccomplex_singles_1
 
     print(f"train loss over epochs was: \n{summary.to_string()}")
     
-    return train_loss, val_loss
+    return summary
 
