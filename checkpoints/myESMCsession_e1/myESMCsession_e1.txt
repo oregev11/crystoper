@@ -1,0 +1,5 @@
+{'epoch': '', 'batch': 0, 'i': 0, 'train_loss': 0.36041706800460815, 'val_loss': None, 'true_sent': None, 'pred_sent': None}
+{'epoch': '', 'batch': 1, 'i': 2, 'train_loss': 0.3062734305858612, 'val_loss': None, 'true_sent': None, 'pred_sent': None}
+{'epoch': '', 'batch': 2, 'i': 4, 'train_loss': 0.1526200920343399, 'val_loss': None, 'true_sent': None, 'pred_sent': None}
+{'epoch': '', 'batch': 3, 'i': 6, 'train_loss': 0.31137406826019287, 'val_loss': None, 'true_sent': None, 'pred_sent': None}
+{'epoch': '', 'batch': 4, 'i': 8, 'train_loss': 0.17869512736797333, 'val_loss': None, 'true_sent': None, 'pred_sent': None}

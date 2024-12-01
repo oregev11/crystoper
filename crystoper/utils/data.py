@@ -133,3 +133,45 @@ def filter_pdb_polymer_ids(polymer_ids, relevant_ids):
     
     return list(df['id'] + '-' + df['entity'])
     
+    def read_log_file(file_path):
+        dict_list = []
+        with open(file_path, 'r') as file:
+            for line in file:
+                # Use ast.literal_eval to safely parse the line as a dictionary
+                parsed_dict = ast.literal_eval(line.strip())
+                dict_list.append(parsed_dict)
+        return dict_list
+
+def load_log(path):
+    df = pd.DataFrame(read_log_file(path))
+    return {'train_loss': df[df.train_loss.notna()],
+            'val_loss' : df[df.val_loss.notna()],
+            'pred_sent' :  df[df['pred_sent'].notna()]}
+    
+def load_train_and_val_loss_from_logs_folder(path, prefix='esmccomplex_singles_113K_'):
+    train_loss = pd.DataFrame()
+    val_loss = pd.DataFrame()
+
+    for i in tqdm(range(5,22)):
+        name = f'{prefix}e{i}'
+        log_path = join(path, name + '.txt')
+        log = load_log(log_path)
+
+        temp_train_loss = pd.DataFrame(log['train_loss'])
+        temp_val_loss = pd.DataFrame(log['val_loss'])
+
+        temp_train_loss['epoch'] = int(i)
+        temp_val_loss['epoch'] = int(i)
+
+
+        train_loss = pd.concat([train_loss, temp_train_loss])
+        val_loss = pd.concat([val_loss, temp_val_loss])
+        
+    df1 = train_loss.groupby('epoch')['train_loss'].mean()
+    df2 = val_loss.groupby('epoch')['val_loss'].mean()
+    summary = pd.concat([df1, df2], axis=1).reset_index()
+
+    print(f"train loss over epochs was: \n{summary.to_string()}")
+    
+    return train_loss, val_loss
+    
