@@ -50,16 +50,20 @@ def main():
     
     device = args.device
     
-    if args.checkpoint:
-        esm_model = torch.load(args.checkpoint)
-        vprint(f"loaded previous model from checkpoint {args.checkpoint}")
-       
-    elif args.model == 'esmc-complex':
+    if args.model == 'esmc-complex':
         esm_model = ESMCcomplex()
+        esm_model.to(args.device)
         vprint(f"A fresh {args.model} has been created!")
     else:
         raise ValueError('Model cannot be resolved')
-    
+        
+    if args.checkpoint:
+        checkpoint = torch.load(args.checkpoint)
+        esm_model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+        vprint(f"loaded previous model from checkpoint {args.checkpoint}")
+        
+        del checkpoint
+       
     esm_tokenizer = EsmTokenizer.from_pretrained("facebook/esm2_t33_650M_UR50D")    
     bart_tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
     bart_model = BartForConditionalGeneration.from_pretrained('facebook/bart-base')     
