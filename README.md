@@ -1,4 +1,6 @@
 # Crystoper - Crystallization Conditions Predictor  
+**:construction_worker: DO NOTE: This repo is still under development and the training of the model `ESMCcomplex` (deposited in `https://huggingface.co/oregev11/ESMCcomplex`) is still in progress! :construction_worker:**
+
 The crystoper repository is designed to predict crystallization conditions for proteins based on their sequence. It also showcases a scalable approach for training and developing ML models.
 
 Current version (0.1) implements:
@@ -7,7 +9,6 @@ Current version (0.1) implements:
 3. Use transfer learning and train an ESM and BART based model to predict crystallization conditions from the protein sequence.
 4. Using our trained model (called `ESMCcomplex`) to predict crystallization conditions for sequences.
 
-**DO NOTE: The deveopment this repo and the training of the model `ESMCcomplex` (deposited in `https://huggingface.co/oregev11/ESMCcomplex`) is still in progress.**
 
 # Biochemical Background
 Crystallography is the golden standard for accurately determining a protein 3D structure.
@@ -77,7 +78,7 @@ data will be saved to `data/pdb_data/parsed_data.csv`.
 4. Create a BART-coded representation of the crystallization conditions ('pdbx_details' feature in the PDB data) of each instance using `$ python vectorize.py -d`. Due to the large vectors size, the pickled data will be saved as shard files under `vectors/details/**/bart_vectors_*.pkl`.
 5. Load a fresh ESMCcomplex model and train it on the data: `$ python3 train.py -s myESMCmodel -n 3 -b 2 -lr 0.0001 --shuffle`. To the test the training process or if you wish to over-fit the model on a tiny dataset add `--toy-train`. 
 
-6. see DOWNLOAD LATEST CHECKPOINT for downloading latest checkpoint (The model did not converge :-( )
+6. see DOWNLOAD LATEST CHECKPOINT for downloading latest checkpoint (Note: model is still in training)
 
 7. To demonstrate the model performance some proteins use `$ python3 demonstrate.py`
 8. For demo with the latest model use `$ python3 demonstrate.py -c checkpoints/esmccomplex_singles_113K/esmccomplex_singles_113K.pkl`
